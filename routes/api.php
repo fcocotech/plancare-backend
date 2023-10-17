@@ -24,4 +24,6 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/your-protected-route', function(){
         return 'Can access now!!';
     });
+
+    Route::get('/security-questions/get-all', 'App\Http\Controllers\SecurityQuestionController@get');
 });

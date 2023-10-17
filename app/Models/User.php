@@ -32,11 +32,6 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'is_admin',
-        'sec_q1_ans',
-        'sec_q2_ans',
-        'sec_q3_ans',
-        'sec_q4_ans',
-        'sec_q5_ans'
     ];
 
     /**
