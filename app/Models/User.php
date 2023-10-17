@@ -44,4 +44,10 @@ class User extends Authenticatable
         'password' => 'hashed',
         'security_answers' => 'json'
     ];
+
+    public function getSecQ1AnsAttribute($value) { return str_repeat('*', strlen($value)); }
+    public function getSecQ2AnsAttribute($value) { return str_repeat('*', strlen($value)); }
+    public function getSecQ3AnsAttribute($value) { return str_repeat('*', strlen($value)); }
+    public function getSecQ4AnsAttribute($value) { return str_repeat('*', strlen($value)); }
+    public function getSecQ5AnsAttribute($value) { return str_repeat('*', strlen($value)); }
 }
