@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\File;
 
 class UserController extends Controller
 {
+    public function create(Request $request) { 
+        
+    }
+
     public function update(Request $request, $user_id) {
         try{
             $user = User::where('id', $user_id)->first();
@@ -41,29 +45,28 @@ class UserController extends Controller
                 $user->sec_q5_ans = $request->sec_q5_ans;
             }
             
-            // Decode the base64 string
-            $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->profile_url));
-            $id_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->idurl));
-            // Create a path to the intended directory
-            $profile_path = storage_path('app/public/images/profiles/');
-            $id_path = storage_path('app/public/images/ids/');
-            // Create the directory if it doesn't exist
-            if(!File::isDirectory($profile_path)){
-                File::makeDirectory($profile_path, 0777, true, true);
+            if($user->profile_url != $request->photoprofile) {
+                array_push($debug, 'Not equal');
+                $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoprofile));
+                $profile_path = storage_path('app/public/images/profiles/');
+                if(!File::isDirectory($profile_path)){
+                    File::makeDirectory($profile_path, 0777, true, true);
+                }
+                $profile_name = time().'_'.$user->id.'_profile.png';
+                file_put_contents($profile_path.$profile_name, $profile_image);
+                $user->profile_url = env('APP_URL', '') . '/storage/images/profiles/'.$profile_name;
             }
-            if(!File::isDirectory($id_path)){
-                File::makeDirectory($id_path, 0777, true, true);
-            }
-            // Create a custom name for the file
-            $profile_name = time().'_'.$user->id.'_profile.png';
-            $id_name = time().'_'.$user->id.'_id.png';
-            // Store the image in the intended directory with the custom name
-            file_put_contents($profile_path.$profile_name, $profile_image);
-            file_put_contents($id_path.$id_name, $id_image);
-            // Save the path in the database
-            $user->profile_url = env('APP_URL', '') . '/storage/images/profiles/'.$profile_name;
-            $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
 
+            if($user->idurl != $request->photoid) {
+                $id_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoid));
+                $id_path = storage_path('app/public/images/ids/');
+                if(!File::isDirectory($id_path)){
+                    File::makeDirectory($id_path, 0777, true, true);
+                }
+                $id_name = time().'_'.$user->id.'_id.png';
+                file_put_contents($id_path.$id_name, $id_image);
+                $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
+            }
             
             $user->update();
 
