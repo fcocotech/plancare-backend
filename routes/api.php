@@ -25,5 +25,9 @@ Route::middleware('auth:api')->group(function () {
         return 'Can access now!!';
     });
 
+    // User
+    Route::post('/user/update/{user_id}', 'App\Http\Controllers\UserController@update');
+
+    // Security Question  
     Route::get('/security-questions/get-all', 'App\Http\Controllers\SecurityQuestionController@get');
 });
