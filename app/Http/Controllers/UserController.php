@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\{File, Hash};
 class UserController extends Controller
 {
     public function create(Request $request) { 
+        $existingUser = User::where('email', $request->email)->get();
+        if(count($existingUser) > 0){
+            return response()->json([
+                'status' => false,
+                'message' => 'Email already in use.',
+            ]);
+        }
+
         $user = new User;
         $user->address          = $request->address;
         $user->birthdate        = $request->birthdate;
