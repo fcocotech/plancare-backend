@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', 'App\Http\Controllers\AuthController@login')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 // Security Question  
 Route::get('/security-questions/get-all', 'App\Http\Controllers\SecurityQuestionController@get')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
+Route::post('/register/user', 'App\Http\Controllers\UserController@create')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
