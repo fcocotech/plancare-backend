@@ -32,12 +32,12 @@ class UserController extends Controller
         $user->sec_q3           = $request->sec_q3;
         $user->sec_q4           = $request->sec_q4;
         $user->sec_q5           = $request->sec_q5;
-        $user->sec_q1_ans = $request->sec_q1_ans;
-        $user->sec_q2_ans = $request->sec_q2_ans;
-        $user->sec_q3_ans = $request->sec_q3_ans;
-        $user->sec_q4_ans = $request->sec_q4_ans;
-        $user->sec_q5_ans = $request->sec_q5_ans;
-
+        $user->sec_q1_ans       = $request->sec_q1_ans;
+        $user->sec_q2_ans       = $request->sec_q2_ans;
+        $user->sec_q3_ans       = $request->sec_q3_ans;
+        $user->sec_q4_ans       = $request->sec_q4_ans;
+        $user->sec_q5_ans       = $request->sec_q5_ans;
+        $user->referral_code    = $request->referral_code;
         $user->password = Hash::make($request->password);
 
         $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoprofile));
