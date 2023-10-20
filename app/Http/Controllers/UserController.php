@@ -43,6 +43,7 @@ class UserController extends Controller
         $user->sec_q4_ans       = $request->sec_q4_ans;
         $user->sec_q5_ans       = $request->sec_q5_ans;
         $user->referral_code    = $request->referral_code;
+        $user->status           = 'pending';
         $user->password = Hash::make($request->password);
 
         $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoprofile));
