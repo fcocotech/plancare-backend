@@ -29,5 +29,6 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // User
+    Route::get('/users', 'App\Http\Controllers\UserController@get');
     Route::post('/user/update/{user_id}', 'App\Http\Controllers\UserController@update');
 });

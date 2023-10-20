@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\{File, Hash};
 
 class UserController extends Controller
 {
+    public function get(Request $request) {
+        $users = User::where('is_admin', '!=', 1)->get();
+        return response()->json(['status' => true, 'users' => $users]);
+    }
+
     public function create(Request $request) { 
         $existingUser = User::where('email', $request->email)->get();
         if(count($existingUser) > 0){
