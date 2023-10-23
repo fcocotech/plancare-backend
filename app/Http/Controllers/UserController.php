@@ -5,12 +5,37 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\{File, Hash};
+use DB;
 
 class UserController extends Controller
 {
+    public function getCardData(Request $request) {
+        $sql = "SELECT 
+                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0) as total_users,
+                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = 'pending') as pending_users,
+                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = 'leader') as total_leaders
+                FROM users u LIMIT 1
+        ";
+        $totals = DB::select($sql);
+        return response()->json([
+            'status' => true,
+            'totals' => $totals[0],
+        ]);
+    }
+
     public function get(Request $request) {
-        $users = User::where('is_admin', '!=', 1)->get();
-        return response()->json(['status' => true, 'users' => $users]);
+        $users = User::where('is_admin', '!=', 1);
+
+        if($request->has('filter') && $request->filter == 'pending'){
+            $users = $users->where('status', 'pending');
+        }
+        if($request->has('filter') && $request->filter == 'leaders'){
+            $users = $users->where('status', 'leader');
+        }
+
+        $users = $users->get();
+
+        return response()->json(['status' => true, 'users' => $users, 'params' => $request->filter]);
     }
 
     public function create(Request $request) { 
