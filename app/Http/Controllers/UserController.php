@@ -93,7 +93,7 @@ class UserController extends Controller
         return response()->json(['status' => true, 'user' => $user]);
     }
 
-    public function update(Request $request, $validatedData) {
+    public function update(Request $request, $user_id) {
         try{
             $user = User::where('id', $user_id)->first();
             $user->address          = $request->address;
