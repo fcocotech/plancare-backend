@@ -71,6 +71,8 @@ class UserController extends Controller
         $user->status           = 'pending';
         $user->password = Hash::make($request->password);
 
+        $user->reference_code   = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'), 0, 8);
+
         $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoprofile));
         $profile_path = storage_path('app/public/images/profiles/');
         if(!File::isDirectory($profile_path)){
