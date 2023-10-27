@@ -34,5 +34,6 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/user/update/{user_id}', 'App\Http\Controllers\UserController@update');
 
     //Transactions
+    Route::get('/transactions/get', 'App\Http\Controllers\TransactionController@get');
     Route::post('/transaction/make-payment', 'App\Http\Controllers\TransactionController@makePayment');
 });

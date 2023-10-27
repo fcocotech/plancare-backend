@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\{File};
 
 class TransactionController extends Controller
 {
+    public function get() {
+        $transactions = Transaction::get();
+        return response()->json([
+            'status' => true,
+            'transactions' => $transactions,
+        ]);
+    }
+
     public function create($data) {
         $transaction = new Transaction;
         $transaction->transaction_id = $data['transaction_id'];
