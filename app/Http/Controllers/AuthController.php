@@ -18,13 +18,26 @@ class AuthController extends Controller
         $username = $request->username;
         $password = $request->password;
 
-        if (Auth::attempt(['email' => $username, 'password' => $password])) {
+        // Add the status to the credentials array
+        $credentials = ['email' => $username, 'password' => $password, 'status' => 'active'];
+
+        // Attempt to authenticate the user
+        if (Auth::attempt($credentials)) {
+            // If authentication was successful, generate a token for the user
             $user = Auth::user();
             $token = $user->createToken('API Token')->plainTextToken;
 
+            // Return the token and user details in the response
             return response()->json(['token' => $token, 'user' => $user], 200);
         }
+        
+        // If authentication failed, check if it's because of pending status
+        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
+            return response()->json(['status' => false, 'message' => 'Account Status still pending!'], 401);
+        } 
 
+        // If authentication failed for other reasons, return an error message
         return response()->json(['status' => false, 'message' => 'Invalid credentials'], 401);
     }
+
 }
