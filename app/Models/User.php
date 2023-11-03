@@ -46,6 +46,10 @@ class User extends Authenticatable
         'security_answers' => 'json'
     ];
 
+    public function roles() {
+        return $this->hasOne(Role::class, 'id', 'role_id');
+    }
+
     public function getSecQ1AnsAttribute($value) { return str_repeat('*', strlen($value)); }
     public function getSecQ2AnsAttribute($value) { return str_repeat('*', strlen($value)); }
     public function getSecQ3AnsAttribute($value) { return str_repeat('*', strlen($value)); }

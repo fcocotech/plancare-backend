@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Module;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,9 +28,12 @@ class AuthController extends Controller
             // If authentication was successful, generate a token for the user
             $user = Auth::user();
             $token = $user->createToken('API Token')->plainTextToken;
-
-            // Return the token and user details in the response
-            return response()->json(['status' => true, 'token' => $token, 'user' => $user], 200);
+            
+            $role = Role::where('id', $user->role_id)->first();
+            
+            $moduleIds = explode(',', $role->module_ids);
+            $modules = Module::select('id', 'name', 'url')->whereIn('id', $moduleIds)->get();
+            return response()->json(['status' => true, 'token' => $token, 'user' => $user, 'modules' => $modules], 200);
         }
         
         // If authentication failed, check if it's because of pending status
