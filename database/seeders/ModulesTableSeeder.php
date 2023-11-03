@@ -11,9 +11,11 @@ class ModulesTableSeeder extends Seeder
      * Run the database seeds.
      */
     public function run(): void
-    {
+    {   
+        Module::truncate();
+
         $modules = [
-            ['name' => 'Home',              'url' => ''],
+            ['name' => 'Home',              'url' => 'home'],
             ['name' => 'Teams',             'url' => 'teams'],
             ['name' => 'View Team',         'url' => 'team/:id'],
             ['name' => 'Transactions',      'url' => 'transactions'],
