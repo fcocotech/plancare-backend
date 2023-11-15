@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\{File, Hash};
 use DB;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -167,5 +168,19 @@ class UserController extends Controller
             ]);
         }
         
+    }
+
+    public function teams(Request $request){
+        $user = Auth::user();
+        
+        $leader = User::select('id', 'name', 'email', 'profile_url')->where('reference_code', $user->referral_code)->first();
+        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $user->reference_code)->get();
+
+        return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
+    }
+
+    public function member(Request $request, $user_id) {
+        $member = User::where('id', $user_id)->first();
+        return response()->json(['status' => true, 'member' => $member]);
     }
 }
