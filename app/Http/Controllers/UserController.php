@@ -178,6 +178,14 @@ class UserController extends Controller
         return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
     }
 
+    public function team(Request $request, $user_id){        
+        $leader = User::select('id', 'name', 'email', 'profile_url', 'reference_code')->where('id', $user_id)->first();
+        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $leader->reference_code)->get();
+
+        $leader->members = $members;
+        return response()->json(['status' => true, 'team' => $leader]);
+    }
+
     public function member(Request $request, $user_id) {
         $member = User::where('id', $user_id)->first();
         return response()->json(['status' => true, 'member' => $member]);

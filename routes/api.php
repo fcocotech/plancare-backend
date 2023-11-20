@@ -33,6 +33,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/users/card-totals', 'App\Http\Controllers\UserController@getCardData');
     Route::post('/user/update/{user_id}', 'App\Http\Controllers\UserController@update');
     Route::get('/teams', 'App\Http\Controllers\UserController@teams');
+    Route::get('/team/{user_id}', 'App\Http\Controllers\UserController@team');
     Route::get('/member/{user_id}', 'App\Http\Controllers\UserController@member');
 
     //Transactions
