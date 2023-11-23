@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
+use App\Models\{User, Referral, Commission};
 use Illuminate\Support\Facades\{File, Hash};
 use DB;
 use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+    public $debugger = [];
+
     public function getCardData(Request $request) {
         $sql = "SELECT 
                     (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0) as total_users,
@@ -39,12 +41,45 @@ class UserController extends Controller
         return response()->json(['status' => true, 'users' => $users, 'params' => $request->filter]);
     }
 
+    public function getRateAndLevel(Request $request, $referrerUserId) {
+        // Get the referrer's referrer (parent)
+        $parentReferrer = Referral::where('referred_user_id', $referrerUserId)->first();
+    
+        // If there is no referrer or reached the root (ADMIN), return the rate_id and current level as 1
+        if (!$parentReferrer) {
+            $rateId = Commission::where('level', 1)->value('id');
+            return ['rate_id' => $rateId, 'level' => 1];
+        }
+    
+        // Recursively traverse up the referral levels
+        $parentResult = getRateAndLevel($parentReferrer->referrer_user_id);
+    
+        // Increment the level as we move down the recursion
+        $currentLevel = $parentResult['level'] + 1;
+    
+        // Get the rate_id for the current level
+        $rateId = Commission::where('level', $currentLevel)->value('id');
+    
+        return response()->json(['rate_id' => $rateId, 'level' => $currentLevel]);
+    }    
+
+    
+
     public function create(Request $request) { 
         $existingUser = User::where('email', $request->email)->get();
         if(count($existingUser) > 0){
             return response()->json([
                 'status' => false,
                 'message' => 'Email already in use.',
+            ]);
+        }
+
+        // referral Valid
+        $referrerUser = User::where('reference_code', $request->referral_code)->first();
+        if(!$referrerUser){
+            return response()->json([
+                'status' => false,
+                'message' => 'Make sure you have a valid referral code',
             ]);
         }
 
@@ -92,10 +127,76 @@ class UserController extends Controller
         file_put_contents($id_path.$id_name, $id_image);
         $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
 
-        $user->save();
-        return response()->json(['status' => true, 'user' => $user]);
+        $newUser = $this->assignReferrer($user, $request->referral_code, 1); // recursion start here
+
+        return response()->json(['status' => true, 'user' => $newUser, 'debugger' => $this->debugger]);
     }
 
+    public function assignReferrer(User $newUser, $initialReferrerCode = null, $initialReferrerId = 0, $depth = 1) {
+        $checker = "";
+        $referrals = null;
+        $newReferrerCode = '';
+        // check if the depth exceeds the limit
+        if ($depth >= 16) {
+            return 'recursion exceeds limit!'; // exit recursion if depth exceeds the limit
+        }
+    
+        $referrer = $this->getReferrerNodeCount($initialReferrerCode);
+
+        if ($referrer) { // node has slot available
+            $newUser->referral_code = $referrer->reference_code;
+            // $newUser->level = $depth;
+            $newUser->save();
+
+            // $referral = new Referral;
+            // $referral->referrer_code = $initialReferrerCode;
+            // $referral->referrer_user_id = $initialReferrerId;
+            // $referral->referred_user_id = $newUser->id;
+
+            // $commissions = Commission::where('level', $newUser->level)->first();
+            // $referral->rate_id = $commissions->id;
+
+
+            // $referral->save();
+
+            return $newUser;
+        } else { // no slot available find another child nodes with available slot
+            if ($depth >= 2 ) {
+                    $referrals = User::where('referral_code', $initialReferrerCode)->whereNull('deleted_at')->orderBy('created_at', 'asc')->get();
+                    foreach($referrals as $referral){
+                        $initialReferrerCode = $referral->reference_code;
+                        $initialReferrerId = $referral->id;
+                        $referrer = $this->getReferrerNodeCount($initialReferrerCode);
+                        if($referrer) { 
+                            $newReferrerCode = $referral->reference_code;
+                            // add user
+                            $newUser->referral_code = $newReferrerCode;
+                            $newUser->save();
+
+                            return $newUser;
+                        }
+                    }
+                    if(!$referrer && $newReferrerCode == ''){
+                        $this->assignReferrer($newUser, $initialReferrerCode, $initialReferrerId, $depth + 1);
+                    }
+            } else {
+                $this->assignReferrer($newUser, $initialReferrerCode, $initialReferrerId, $depth + 1);
+            }
+        }
+
+        array_push($this->debugger, ['referrer' => $referrer, 'newReferrerCode' => $newReferrerCode, 'depth' => $depth]);
+    }
+
+    protected function getReferrerNodeCount($initialReferrerCode) {
+        return User::whereRaw('(SELECT COUNT(*) FROM users AS u WHERE `u`.`referral_code` = "'.$initialReferrerCode.'" AND u.deleted_at IS NULL) < 4')
+        ->first();
+    }
+
+    protected function saveNewUser(User $newUser, $referral_code) {
+        $newUser->referral_code = $referrer->reference_code;
+        $newUser->save();
+    }
+    
     public function update(Request $request, $user_id) {
         try{
             $user = User::where('id', $user_id)->first();
