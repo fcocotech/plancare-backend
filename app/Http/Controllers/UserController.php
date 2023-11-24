@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\{User, Referral, Commission};
+use App\Models\{User, Referral, Commission, UserCommission};
 use Illuminate\Support\Facades\{File, Hash};
 use DB;
 use Illuminate\Support\Facades\Auth;
@@ -147,6 +147,7 @@ class UserController extends Controller
             $newUser->referral_code = $referrer->reference_code;
             // $newUser->level = $depth;
             $newUser->save();
+            $this->calculateCommissions($referrer->reference_code, $newUser->id);
 
             // $referral = new Referral;
             // $referral->referrer_code = $initialReferrerCode;
@@ -158,11 +159,12 @@ class UserController extends Controller
 
 
             // $referral->save();
-
+            array_push($this->debugger, ['referrer' => $referrer]);
             return $newUser;
         } else { // no slot available find another child nodes with available slot
             if ($depth >= 2 ) {
                     $referrals = User::where('referral_code', $initialReferrerCode)->whereNull('deleted_at')->orderBy('created_at', 'asc')->get();
+                    array_push($this->debugger, ['referrals' => $referrals]);
                     foreach($referrals as $referral){
                         $initialReferrerCode = $referral->reference_code;
                         $initialReferrerId = $referral->id;
@@ -172,7 +174,8 @@ class UserController extends Controller
                             // add user
                             $newUser->referral_code = $newReferrerCode;
                             $newUser->save();
-
+                            
+                            $this->calculateCommissions($newReferrerCode, $newUser->id);
                             return $newUser;
                         }
                     }
@@ -188,13 +191,30 @@ class UserController extends Controller
     }
 
     protected function getReferrerNodeCount($initialReferrerCode) {
-        return User::whereRaw('(SELECT COUNT(*) FROM users AS u WHERE `u`.`referral_code` = "'.$initialReferrerCode.'" AND u.deleted_at IS NULL) < 4')
+        return User::where('reference_code', $initialReferrerCode)->whereRaw('(SELECT COUNT(*) FROM users AS u WHERE `u`.`referral_code` = "'.$initialReferrerCode.'" AND u.deleted_at IS NULL) < 4')
         ->first();
     }
 
-    protected function saveNewUser(User $newUser, $referral_code) {
-        $newUser->referral_code = $referrer->reference_code;
-        $newUser->save();
+    protected function calculateCommissions($referral_code, $id, $depth = 1) {
+        if ($depth >= 16) {
+            return 'recursion exceeds limit!'; // exit recursion if depth exceeds the limit
+        }
+
+        $user = User::where('reference_code', $referral_code)->whereNull('deleted_at')->first();
+        $this->saveUserCommission($user, $depth, $id);
+        $referral_code = $user->referral_code;
+        array_push($this->debugger, ['commission_user' => $user->reference_code, 'commission_level' => $depth, 'referral_code' => $referral_code]);
+        if(isset($user->referral_code)){
+            $this->calculateCommissions($referral_code, $id, $depth + 1);
+        }
+    }
+
+    protected function saveUserCommission(User $user, $commission_level, $commission_from) {
+        $user_commission = new UserCommission;
+        $user_commission->commission_level = $commission_level;
+        $user_commission->commission_from = $commission_from;
+        $user_commission->user_id = $user->id;
+        $user_commission->save();
     }
     
     public function update(Request $request, $user_id) {
