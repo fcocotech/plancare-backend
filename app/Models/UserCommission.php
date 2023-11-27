@@ -15,4 +15,8 @@ class UserCommission extends Model
         'user_id',
         'status'
     ];
+
+    public function commission_level() {
+        return $this->hasOne(Commission::class, 'level', 'commission_level');
+    }
 }
