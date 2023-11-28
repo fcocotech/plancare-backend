@@ -27,16 +27,26 @@ class UserController extends Controller
     }
 
     public function get(Request $request) {
-        $users = User::where('is_admin', '!=', 1);
+        $users = User::select('users.*')
+            ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
+            ->leftJoin('transactions as tr', function ($join) {
+                $join->on('tr.user_id', '=', 'users.id')
+                    ->where('tr.payment_method', 'Commissions');
+            })
+            ->where('users.is_admin', '!=', 1);
 
-        if($request->has('filter') && $request->filter == 'pending'){
-            $users = $users->where('status', 'pending');
-        }
-        if($request->has('filter') && $request->filter == 'leaders'){
-            $users = $users->where('status', 'leader');
+        if ($request->filled('filter')) {
+            switch ($request->filter) {
+                case 'pending':
+                    $users->where('users.status', 'pending');
+                    break;
+                case 'leaders':
+                    $users->where('users.status', 'leader');
+                    break;
+            }
         }
 
-        $users = $users->get();
+        $users = $users->groupBy('users.id')->get();
 
         return response()->json(['status' => true, 'users' => $users, 'params' => $request->filter]);
     }
