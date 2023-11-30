@@ -281,6 +281,10 @@ class UserController extends Controller
                 file_put_contents($id_path.$id_name, $id_image);
                 $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
             }
+
+            if($request->has('newpassword') && $request->has('confirmpassword')){
+                $user->password = Hash::make($request->newpassword);
+            }
             
             $user->update();
 
