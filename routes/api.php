@@ -39,4 +39,8 @@ Route::middleware('auth:api')->group(function () {
     //Transactions
     Route::get('/transactions/get', 'App\Http\Controllers\TransactionController@get');
     Route::post('/transaction/make-payment', 'App\Http\Controllers\TransactionController@makePayment');
+
+    // Products
+    Route::post('/add/new-product', 'App\Http\Controllers\ProductController@create');
+    Route::get('/products', 'App\Http\Controllers\ProductController@show');
 });
