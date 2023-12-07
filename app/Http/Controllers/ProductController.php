@@ -18,6 +18,14 @@ class ProductController extends Controller
         ]);
     }
 
+    public function activeProducts(Request $request) {
+        $products = Product::where('is_active', 1)->get();
+        return response()->json([
+            'status' => true,
+            'products' => $products,
+        ]);
+    }
+
     public function create(Request $request) {
         try {
             $user = Auth::user();
@@ -122,7 +130,7 @@ class ProductController extends Controller
             $product->photo_url = env('APP_URL', '') . '/storage/images/products/'.$proof_name;
         }
 
-        
+
         $product->update();
         return response()->json([
             'status' => true,
