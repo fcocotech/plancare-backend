@@ -13,6 +13,8 @@ class CommissionsSeeder extends Seeder
      */
     public function run(): void
     {
+        Commission::truncate();
+
         $commissions = [
             ['level' => '1',    'rate' => '30'],
             ['level' => '2',    'rate' => '20'],

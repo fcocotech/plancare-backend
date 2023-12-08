@@ -12,6 +12,8 @@ class SecurityQuestionSeeder extends Seeder
      */
     public function run(): void
     {
+        SecurityQuestion::truncate();
+
         $securityQuestions = [
             ['question' => 'What is your mother\'s maiden name?'],
             ['question' => 'What was the name of your first pet?'],
