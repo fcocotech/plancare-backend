@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\{Transaction, UserCommission, Commission};
+use App\Models\{Transaction, UserCommission, Commission, ProductPurchase};
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\{File};
@@ -72,6 +72,10 @@ class TransactionController extends Controller
                     $payment_for->status = 'active';
                     $payment_for->update();
 
+                    $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
+                    $productPurchase->status = 'paid';
+                    $productPurchase->update();
+                    
                     // commission distribution
                     $datas = $this->commissionDistribution($payment_for, $request->amount);
 

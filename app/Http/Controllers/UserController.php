@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\{User, Referral, Commission, UserCommission};
+use App\Models\{User, Referral, Commission, UserCommission, Product, ProductPurchase};
 use Illuminate\Support\Facades\{File, Hash};
 use DB;
 use Illuminate\Support\Facades\Auth;
@@ -28,12 +28,27 @@ class UserController extends Controller
 
     public function get(Request $request) {
         $users = User::select('users.*')
-            ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
-            ->leftJoin('transactions as tr', function ($join) {
-                $join->on('tr.user_id', '=', 'users.id')
-                    ->where('tr.payment_method', 'Commissions');
-            })
-            ->where('users.is_admin', '!=', 1);
+        ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
+        ->selectRaw('(SELECT p.name FROM product_purchases pp
+                        LEFT JOIN products p ON pp.product_id = p.id
+                        WHERE pp.purchased_by = users.id
+                        ORDER BY pp.created_at ASC
+                        LIMIT 1) as product_name')
+        ->selectRaw('(SELECT p.price FROM product_purchases pp
+                        LEFT JOIN products p ON pp.product_id = p.id
+                        WHERE pp.purchased_by = users.id
+                        ORDER BY pp.created_at ASC
+                        LIMIT 1) as product_price')
+        ->selectRaw('(SELECT p.id FROM product_purchases pp
+                        LEFT JOIN products p ON pp.product_id = p.id
+                        WHERE pp.purchased_by = users.id
+                        ORDER BY pp.created_at ASC
+                        LIMIT 1) as product_purchase_id')
+        ->leftJoin('transactions as tr', function ($join) {
+            $join->on('tr.user_id', '=', 'users.id')
+                ->where('tr.payment_method', 'Commissions');
+        })
+        ->where('users.is_admin', '!=', 1);
 
         if ($request->filled('filter')) {
             switch ($request->filter) {
@@ -93,6 +108,15 @@ class UserController extends Controller
             ]);
         }
 
+        // product Valid
+        $product = Product::where('id', $request->product_id)->where('is_active', 1)->first();
+        if(!$product){
+            return response()->json([
+                'status' => false,
+                'message' => 'Make sure you have a valid referral code',
+            ]);
+        }
+
         $user = new User;
         $user->address          = $request->address;
         $user->birthdate        = $request->birthdate;
@@ -100,15 +124,7 @@ class UserController extends Controller
         $user->email            = $request->email;
         $user->idtype           = $request->idtype;
         $user->mobile_number    = $request->mobile_number;
-        $user->name             = $request->name;
-        $user->nationality      = $request->nationality;
-        $user->zipcode          = $request->zipcode;
-        $user->sec_q1           = $request->sec_q1;
-        $user->sec_q2           = $request->sec_q2;
-        $user->sec_q3           = $request->sec_q3;
-        $user->sec_q4           = $request->sec_q4;
-        $user->sec_q5           = $request->sec_q5;
-        $user->sec_q1_ans       = $request->sec_q1_ans;
+        $user->name             = $request->namnewUser->id_q1_ans;
         $user->sec_q2_ans       = $request->sec_q2_ans;
         $user->sec_q3_ans       = $request->sec_q3_ans;
         $user->sec_q4_ans       = $request->sec_q4_ans;
@@ -138,6 +154,13 @@ class UserController extends Controller
         $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
 
         $newUser = $this->assignReferrer($user, $request->referral_code, 1); // recursion start here
+
+        $productPurchase = new ProductPurchase;
+        $productPurchase->product_id    = $request->product_id;
+        $productPurchase->purchased_by  = $user->id;
+        $productPurchase->referrer_id   = $referrerUser->id;
+
+        $productPurchase->save();
 
         return response()->json(['status' => true, 'user' => $newUser, 'debugger' => $this->debugger]);
     }
