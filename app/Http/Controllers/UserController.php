@@ -124,7 +124,8 @@ class UserController extends Controller
         $user->email            = $request->email;
         $user->idtype           = $request->idtype;
         $user->mobile_number    = $request->mobile_number;
-        $user->name             = $request->namnewUser->id_q1_ans;
+        $user->name             = $request->name;
+        $user->sec_q1_ans       = $request->sec_q1_ans;
         $user->sec_q2_ans       = $request->sec_q2_ans;
         $user->sec_q3_ans       = $request->sec_q3_ans;
         $user->sec_q4_ans       = $request->sec_q4_ans;
