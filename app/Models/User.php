@@ -50,6 +50,10 @@ class User extends Authenticatable
         return $this->hasOne(Role::class, 'id', 'role_id');
     }
 
+    public function parent() {
+        return $this->hasOne(User::class, 'reference_code', 'reference_code')->select('id', 'name');
+    }
+
     public function getSecQ1AnsAttribute($value) { return str_repeat('*', strlen($value)); }
     public function getSecQ2AnsAttribute($value) { return str_repeat('*', strlen($value)); }
     public function getSecQ3AnsAttribute($value) { return str_repeat('*', strlen($value)); }
