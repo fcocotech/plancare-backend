@@ -20,6 +20,8 @@ class ModulesTableSeeder extends Seeder
             ['name' => 'View Team',         'url' => 'team/:id'],
             ['name' => 'Transactions',      'url' => 'transactions'],
             ['name' => 'Users',             'url' => 'users'],
+            ['name' => 'Earnings',          'url' => 'earnings'],
+            ['name' => 'Roles',             'url' => 'roles'],
             ['name' => 'Settings',          'url' => 'settings'],
             ['name' => 'Shop',              'url' => 'shop'],
         ];
