@@ -39,11 +39,9 @@ class UserController extends Controller
                         WHERE pp.purchased_by = users.id
                         ORDER BY pp.created_at ASC
                         LIMIT 1) as product_price')
-        ->selectRaw('(SELECT p.id FROM product_purchases pp
-                        LEFT JOIN products p ON pp.product_id = p.id
+        ->selectRaw('(SELECT pp.id FROM product_purchases pp
                         WHERE pp.purchased_by = users.id
-                        ORDER BY pp.created_at ASC
-                        LIMIT 1) as product_purchase_id')
+                    ) as product_purchase_id')
         ->leftJoin('transactions as tr', function ($join) {
             $join->on('tr.user_id', '=', 'users.id')
                 ->where('tr.payment_method', 'Commissions');
