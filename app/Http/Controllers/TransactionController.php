@@ -30,6 +30,10 @@ class TransactionController extends Controller
         $transaction->processed_by = $data['processed_by'];
         $transaction->user_id = $data['user_id'];
         $transaction->status = $data['status'];
+        $transaction->commission_rate = $data['commission_rate'] ?? 0;
+        if(isset($data['commission_from'])){
+            $transaction->commission_from = $data['commission_from'];
+        }
 
         $transaction->save();
 
@@ -73,9 +77,11 @@ class TransactionController extends Controller
                     $payment_for->update();
 
                     $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
-                    $productPurchase->status = 'paid';
-                    $productPurchase->update();
-                    
+                    if($productPurchase){
+                        $productPurchase->status = 'paid';
+                        $productPurchase->update();
+                    }
+                
                     // commission distribution
                     $datas = $this->commissionDistribution($payment_for, $request->amount);
 
@@ -110,7 +116,9 @@ class TransactionController extends Controller
                 'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
                 'description' => 'Received '.($commission->rate).'% commission from '.$from->name,
                 'status' => 'Complete',
-                'proof_url' => ''
+                'proof_url' => '',
+                'commission_rate' => $commission->rate,
+                'commission_from' => $from->id
             ];
 
             $datas[] = $data;
