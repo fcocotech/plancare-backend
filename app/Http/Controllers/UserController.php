@@ -97,20 +97,29 @@ class UserController extends Controller
             ]);
         }
 
-        $parts = explode('-', $request->referral_code);
+        $product_id = 1;
+        $parent_id = 0;
+        $user_id = 0;
+        if($request->has('referral_code')){
+            $parts = explode('-', $request->referral_code);
 
-        $product_id = (int)$parts[0];
-        $parent_id = (int)$parts[1];
-        $user_id = (int)$parts[2];
+            $product_id = (int)$parts[0];
+            $parent_id = (int)$parts[1];
+            $user_id = (int)$parts[2];
+        }        
 
         // referral Valid
-        $referrerUser = User::where('id', $user_id)->first();
-        if(!$referrerUser){
-            return response()->json([
-                'status' => false,
-                'message' => 'Make sure you have a valid referral code',
-            ]);
+        $referrerUser = null;
+        if($user_id != 0){
+            $referrerUser = User::where('id', $user_id)->first();
+            if(!$referrerUser){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Make sure you have a valid referral code',
+                ]);
+            }
         }
+        
 
         // product Valid
         $product = Product::where('id', $product_id)->where('is_active', 1)->first();
@@ -134,7 +143,7 @@ class UserController extends Controller
         $user->sec_q3_ans       = $request->sec_q3_ans;
         $user->sec_q4_ans       = $request->sec_q4_ans;
         $user->sec_q5_ans       = $request->sec_q5_ans;
-        $user->referral_code    = $referrerUser->reference_code;
+        $user->referral_code    = $referrerUser->reference_code ?? 0;
         $user->status           = 'pending';
         $user->password = Hash::make($request->password);
 
@@ -158,14 +167,16 @@ class UserController extends Controller
         file_put_contents($id_path.$id_name, $id_image);
         $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
 
-        $newUser = $this->assignReferrer($user, $referrerUser->reference_code, 1); // recursion start here
+        $newUser = $this->assignReferrer($user, $referrerUser->reference_code ?? 0, 1); // recursion start here
 
-        $productPurchase = new ProductPurchase;
-        $productPurchase->product_id    = $product_id;
-        $productPurchase->purchased_by  = $user->id;
-        $productPurchase->referrer_id   = $referrerUser->id;
-
-        $productPurchase->save();
+        if($referrerUser && $referrerUser->reference_code){
+            $productPurchase = new ProductPurchase;
+            $productPurchase->product_id    = $product_id;
+            $productPurchase->purchased_by  = $user->id;
+            $productPurchase->referrer_id   = $referrerUser->id ?? 0;
+    
+            $productPurchase->save();
+        }
 
         return response()->json(['status' => true, 'user' => $newUser, 'debugger' => $this->debugger]);
     }
