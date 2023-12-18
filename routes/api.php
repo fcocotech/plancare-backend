@@ -38,6 +38,7 @@ Route::middleware('auth:api')->group(function () {
 
     //Transactions
     Route::get('/transactions/get', 'App\Http\Controllers\TransactionController@get');
+    Route::get('/transactions/earnings', 'App\Http\Controllers\TransactionController@earnings');
     Route::post('/transaction/make-payment', 'App\Http\Controllers\TransactionController@makePayment');
 
     // Products

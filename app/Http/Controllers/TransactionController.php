@@ -20,6 +20,18 @@ class TransactionController extends Controller
         ]);
     }
 
+    public function earnings() {
+        $user = Auth::user();
+
+        $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('payment_method', 'Commissions')->get();
+        $total_earnings = $earnings->sum('amount');
+        return response()->json([
+            'status' => true,
+            'earnings' => $earnings,
+            'total_earnings' => $total_earnings
+        ]);
+    }
+
     public function create($data) {
         $transaction = new Transaction;
         $transaction->transaction_id = $data['transaction_id'];

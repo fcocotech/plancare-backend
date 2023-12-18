@@ -19,7 +19,9 @@ class Transaction extends Model
         'proof_url', 
         'processed_by', 
         'user_id', 
-        'status'
+        'status',
+        'commission_rate',
+        'commission_from'
     ];
 
     public function processed_by() {
@@ -28,6 +30,10 @@ class Transaction extends Model
 
     public function user() {
         return $this->hasOne(User::class, 'id', 'user_id');
+    }
+
+    public function commission_from() {
+        return $this->hasOne(User::class, 'id', 'commission_from');
     }
 
 }
