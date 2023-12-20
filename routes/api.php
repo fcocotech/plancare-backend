@@ -19,6 +19,9 @@ Route::post('/login', 'App\Http\Controllers\AuthController@login')->withoutMiddl
 Route::get('/security-questions/get-all', 'App\Http\Controllers\SecurityQuestionController@get')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 Route::post('/register/user', 'App\Http\Controllers\UserController@create')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 
+//Password
+Route::post('/forgot-password', 'App\Http\Controllers\ForgotPasswordController@forgotPassword')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
