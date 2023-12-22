@@ -7,6 +7,10 @@ use App\Models\{User, Referral, Commission, UserCommission, Product, ProductPurc
 use Illuminate\Support\Facades\{File, Hash};
 use DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
+
 
 class UserController extends Controller
 {
@@ -197,7 +201,7 @@ class UserController extends Controller
             // $newUser->level = $depth;
             $newUser->save();
             $this->calculateCommissions($referrer->reference_code, $newUser->id);
-
+            $this->sendEmailVerification($newUser);
             // $referral = new Referral;
             // $referral->referrer_code = $initialReferrerCode;
             // $referral->referrer_user_id = $initialReferrerId;
@@ -225,6 +229,7 @@ class UserController extends Controller
                             $newUser->save();
                             
                             $this->calculateCommissions($newReferrerCode, $newUser->id);
+                            $this->sendEmailVerification($newUser);
                             return $newUser;
                         }
                     }
@@ -266,6 +271,15 @@ class UserController extends Controller
         $user_commission->save();
     }
     
+    public function sendEmailVerification($user) {
+        $token = Str::random(32).$user->id;
+        Mail::send('emails.verify-email', [
+            'action_url' => env('FRONTEND_URL').'verify-email/'.$token,
+        ], function ($message) use ($user) {
+            $message->to($user->email)->subject('Action Required: Email Verification');
+        });
+    }
+
     public function update(Request $request, $user_id) {
         try{
             $user = User::where('id', $user_id)->first();
@@ -363,5 +377,32 @@ class UserController extends Controller
     public function member(Request $request, $user_id) {
         $member = User::where('id', $user_id)->first();
         return response()->json(['status' => true, 'member' => $member]);
+    }
+
+    public function emailVerify(Request $request, $token) {
+        $id = substr($token, 32);
+        $user = User::where('id', $id)->first();
+        if(!$user){
+            return response()->json(['status' => false, 'message' => 'Token not valid']);
+        }
+
+        if($user->is_email_verified == 1 && $user->email_verified_at != null){
+            return response()->json(['status' => true, 'message' => 'Email already verified']);
+        }
+
+        $user->email_verified_at = Carbon::now();
+        $user->is_email_verified = 1;
+        $user->save();
+
+        $parent = User::where('reference_code', $user->referral_code)->first();
+
+        Mail::send('emails.sign-up', [
+            'action_url' => env('FRONTEND_URL').'login',
+            'user_id' => '0001-'.str_pad($parent->id, 4, '0', STR_PAD_LEFT).'-'.str_pad($user->id, 4, '0', STR_PAD_LEFT)
+        ], function ($message) use ($user) {
+            $message->to($user->email)->subject('Your Email Was Verified');
+        });
+
+        return response()->json(['status' => true, 'message' => 'We have verify your email address']);
     }
 }
