@@ -126,13 +126,13 @@ class UserController extends Controller
         
 
         // product Valid
-        $product = Product::where('id', $product_id)->where('is_active', 1)->first();
-        if(!$product){
-            return response()->json([
-                'status' => false,
-                'message' => 'Make sure you have a valid referral code',
-            ]);
-        }
+        // $product = Product::where('id', $product_id)->where('is_active', 1)->first();
+        // if(!$product){
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => 'Make sure you have a valid referral code',
+        //     ]);
+        // }
 
         $user = new User;
         $user->address          = $request->address;
@@ -147,11 +147,13 @@ class UserController extends Controller
         $user->sec_q3_ans       = $request->sec_q3_ans;
         $user->sec_q4_ans       = $request->sec_q4_ans;
         $user->sec_q5_ans       = $request->sec_q5_ans;
+        $user->parent_referral    = $referrerUser->referral_code;//assign parent referral code
         $user->referral_code    = $referrerUser->reference_code ?? 0;
-        $user->status           = 'pending';
+        $user->status           = 'pending';//should be int
         $user->password = Hash::make($request->password);
 
-        $user->reference_code   = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'), 0, 8);
+        //this is the referral code
+        $user->reference_code   = '';//substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'), 0, 8);
 
         $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoprofile));
         $profile_path = storage_path('app/public/images/profiles/');
@@ -171,7 +173,8 @@ class UserController extends Controller
         file_put_contents($id_path.$id_name, $id_image);
         $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
 
-        $newUser = $this->assignReferrer($user, $referrerUser->reference_code ?? 0, 1); // recursion start here
+        // There will be no recursion. If the user has already max members the system will prompt
+        // $newUser = $this->assignReferrer($user, $referrerUser->reference_code ?? 0, 1); // recursion start here
 
         if($referrerUser && $referrerUser->reference_code){
             $productPurchase = new ProductPurchase;
