@@ -21,7 +21,7 @@ class AuthController extends Controller
         $password = $request->password;
 
         // Add the status to the credentials array
-        $credentials = ['email' => $username, 'password' => $password, 'status' => 'active'];
+        $credentials = ['referral_code' => $username, 'password' => $password, 'status' => 1];
 
         // Attempt to authenticate the user
         if (Auth::attempt($credentials)) {
@@ -48,7 +48,7 @@ class AuthController extends Controller
         }
         
         // If authentication failed, check if it's because of pending status
-        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password'], 'status' => 'pending'])) {
+        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password'], 'status' => 2])) {
             return response()->json(['status' => false, 'message' => 'Account status still pending!'], 200);
         } 
 

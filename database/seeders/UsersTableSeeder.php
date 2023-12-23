@@ -15,11 +15,12 @@ class UsersTableSeeder extends Seeder
     {
         User::create([
             'name' => 'Admin',
-            'email' => 'admin',
+            'email' => 'plancareph@gmail.com',
             'password' => Hash::make('123456'),
             'is_admin' => 1,
-            'status' => 'active',
-            'reference_code' => 'ADMIN'
+            'status' => 1,
+            'reference_code' => '001001',
+            'parent_referral'=>'000000'
         ]);
     }
 }

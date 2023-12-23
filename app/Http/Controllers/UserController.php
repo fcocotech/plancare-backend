@@ -93,13 +93,14 @@ class UserController extends Controller
     
 
     public function create(Request $request) { 
-        $existingUser = User::where('email', $request->email)->get();
-        if(count($existingUser) > 0){
-            return response()->json([
-                'status' => false,
-                'message' => 'Email already in use.',
-            ]);
-        }
+        //email can be duplicate
+        // $existingUser = User::where('email', $request->email)->get();
+        // if(count($existingUser) > 0){
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => 'Email already in use.',
+        //     ]);
+        // }
 
         $product_id = 1;
         $parent_id = 0;
@@ -149,7 +150,7 @@ class UserController extends Controller
         $user->sec_q5_ans       = $request->sec_q5_ans;
         $user->parent_referral    = $referrerUser->referral_code;//assign parent referral code
         $user->referral_code    = $referrerUser->reference_code ?? 0;
-        $user->status           = 'pending';//should be int
+        $user->status           = 2;//should be int
         $user->password = Hash::make($request->password);
 
         //this is the referral code
@@ -364,14 +365,14 @@ class UserController extends Controller
         $user = Auth::user();
         
         $leader = User::select('id', 'name', 'email', 'profile_url')->where('reference_code', $user->referral_code)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $user->reference_code)->where('status', 'active')->get();
+        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $user->reference_code)->where('status', '1')->get();
 
         return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
     }
 
     public function team(Request $request, $user_id){        
         $leader = User::select('id', 'name', 'email', 'profile_url', 'reference_code')->where('id', $user_id)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $leader->reference_code)->where('status', 'active')->get();
+        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $leader->reference_code)->where('status', '1')->get();
 
         $leader->members = $members;
         return response()->json(['status' => true, 'team' => $leader]);

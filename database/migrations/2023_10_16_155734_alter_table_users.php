@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('sec_q4_ans')->nullable();
             $table->integer('sec_q5')->nullable();
             $table->string('sec_q5_ans')->nullable();
-            $table->string('status');
+            $table->integer('status');
         });
     }
 
