@@ -68,7 +68,7 @@ class TransactionController extends Controller
                     'payment_method' => $request->payment_method,
                     'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
                     'description' => 'Make payment for '.$payment_for->name,
-                    'status' => 'Complete',
+                    'status' => 1,
                     'proof_url' => ''
                 ];
 
@@ -85,7 +85,7 @@ class TransactionController extends Controller
 
                 $transaction = self::create($data);
                 if($transaction['status']) {
-                    $payment_for->status = 'active';
+                    $payment_for->status = 1;
                     $payment_for->update();
 
                     $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
@@ -104,7 +104,7 @@ class TransactionController extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']);
             }
-        } catch(\Exception $e) {
+        } catch(Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -127,7 +127,7 @@ class TransactionController extends Controller
                 'payment_method' => 'Commissions',
                 'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
                 'description' => 'Received '.($commission->rate).'% commission from '.$from->name,
-                'status' => 'Complete',
+                'status' => 1,
                 'proof_url' => '',
                 'commission_rate' => $commission->rate,
                 'commission_from' => $from->id

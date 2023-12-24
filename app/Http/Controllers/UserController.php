@@ -19,8 +19,8 @@ class UserController extends Controller
     public function getCardData(Request $request) {
         $sql = "SELECT 
                     (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0) as total_users,
-                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = 'pending') as pending_users,
-                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = 'leader') as total_leaders
+                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '2') as pending_users,
+                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '1') as total_active
                 FROM users u LIMIT 1
         ";
         $totals = DB::select($sql);
@@ -31,7 +31,7 @@ class UserController extends Controller
     }
 
     public function get(Request $request) {
-        $users = User::select('users.*')
+        $users = User::select('users.id','users.name','users.email','users.referral_code','users.status')
         ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
         ->selectRaw('(SELECT p.name FROM product_purchases pp
                         LEFT JOIN products p ON pp.product_id = p.id
@@ -52,18 +52,12 @@ class UserController extends Controller
         })
         ->where('users.is_admin', '!=', 1);
 
-        if ($request->filled('filter')) {
-            switch ($request->filter) {
-                case '2':
-                    $users->where('users.status', '2');
-                    break;
-                case '3':
-                    $users->where('users.status', '3');
-                    break;
-            }
+        if ($request->filter!=0) {
+           $users->where('users.status', $request->filter);
+              
         }
 
-        $users = $users->groupBy('users.id')->get();
+        $users = $users->groupBy('users.id','users.name','users.email','users.referral_code','users.status')->get();
 
         return response()->json(['status' => true, 'users' => $users, 'params' => $request->filter]);
     }
@@ -117,12 +111,12 @@ class UserController extends Controller
         // $referrerUser =  $user_id;
         // if($user_id != null){
         //     $referrerUser = User::where('id', $user_id->id)->first();
-            if(!$referrerUser){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Make sure you have a valid referral code',
-                ]);
-            }
+        if(!$referrerUser){
+            return response()->json([
+                'status' => false,
+                'message' => 'Make sure you have a valid referral code',
+            ]);
+        }
         // }
         
 
@@ -187,12 +181,16 @@ class UserController extends Controller
     
             $productPurchase->save();
         }
-
+        //send email verification after registration
+        $this->sendEmailVerification($user);
         return response()->json(['status' => true, 'user' => $user, 'debugger' => $this->debugger]);
     }
 
-    public function findChildCount($referrerCode){
-        
+    public function findChildCount($parentid){
+        return User::where('parent_referral',$parentid)->where('status',1)->count();
+    }
+    public function apifindChildCount(Request $request){
+        return User::where('parent_referral',$request->parentid)->where('status',1)->count();
     }
     public function generateReferralCode($userid,$prodid,$parentid){
         $strparentid;

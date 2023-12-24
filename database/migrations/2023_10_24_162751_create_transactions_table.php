@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('proof_url')->nullable();
             $table->integer('processed_by');
             $table->integer('user_id');
-            $table->string('status');
+            $table->integer('status');//1 complete - 2 pending
             $table->timestamps();
             $table->softDeletes();
         });
