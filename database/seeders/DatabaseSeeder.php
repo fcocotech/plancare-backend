@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
         // ]);
         // $this->call(UsersTableSeeder::class);
         $this->call(SecurityQuestionSeeder::class);
-        // $this->call(CommissionsSeeder::class);
+        $this->call(CommissionsSeeder::class);
         $this->call(ModulesTableSeeder::class);
         // $this->call(RolesTableSeeder::class);
         // $this->call(UsersTableSeeder::class);
