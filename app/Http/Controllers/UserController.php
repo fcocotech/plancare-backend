@@ -172,18 +172,34 @@ class UserController extends Controller
 
         // There will be no recursion. If the user has already max members the system will prompt
         // $newUser = $this->assignReferrer($user, $referrerUser->reference_code ?? 0, 1); // recursion start here
-        $user->save();
-        if($referrerUser && $referrerUser->reference_code){
-            $productPurchase = new ProductPurchase;
-            $productPurchase->product_id    = $product_id; //for now just 1 product
-            $productPurchase->purchased_by  = $user->id;
-            $productPurchase->referrer_id   = $referrerUser->id ?? 0;
-    
-            $productPurchase->save();
+        $saveuser=false;
+        if($this->findChildCount($referrerUser->id)<5){
+            if($this->findChildCount($referrerUser->id)<4){
+                $saveuser=true;
+            }else{
+                //ask user if they want to save it as 4th node or to a new parent
+            }
         }
-        //send email verification after registration
-        $this->sendEmailVerification($user);
-        return response()->json(['status' => true, 'user' => $user, 'debugger' => $this->debugger]);
+        if($saveuser){
+            $user->save();
+            if($referrerUser && $referrerUser->reference_code){
+                $productPurchase = new ProductPurchase;
+                $productPurchase->product_id    = $product_id; //for now just 1 product
+                $productPurchase->purchased_by  = $user->id;
+                $productPurchase->referrer_id   = $referrerUser->id ?? 0;
+        
+                $productPurchase->save();
+            }
+            //send email verification after registration
+            $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
+            $user->save();
+            $this->sendEmailVerification($user);
+            $this->sendWelcomeEmail($user);
+            return response()->json(['status' => true, 'user' => $user, 'debugger' => $this->debugger]);
+        }else{
+            return response()->json(['status' => false, 'user' => $user, 'debugger' => $this->debugger]);
+        }
+        
     }
 
     public function findChildCount($parentid){
@@ -204,6 +220,19 @@ class UserController extends Controller
         }
 
         return $prodid . $parentid . $userid;
+    }
+    public function ApigenerateReferralCode(Request $request){
+        $strparentid;
+        if($request->parentid<1){
+            $request->parentid="000";
+        }
+        elseif($request->parentid<10){
+            $request->parentid="00" . $request->parentid;
+        }elseif($request->parentid<100){
+            $request->parentid="0" . $request->parentid;
+        }
+
+        return $request->prodid . $request->parentid . $request->userid;
     }
     public function assignReferrer(User $newUser, $initialReferrerCode = null, $initialReferrerId = 0, $depth = 1) {
         $checker = "";
@@ -300,6 +329,14 @@ class UserController extends Controller
         });
     }
 
+    public function sendWelcomeEmail($user) {
+        // $token = Str::random(32).$user->id;
+        Mail::send('emails.register-user', [
+            'referral_code' => $user->referral_code,
+        ], function ($message) use ($user) {
+            $message->to($user->email)->subject('Welcome to PlanCare Philippines');
+        });
+    }
     public function update(Request $request, $user_id) {
         try{
             $user = User::where('id', $user_id)->first();
@@ -367,7 +404,7 @@ class UserController extends Controller
                 'message' => 'Update Successful',
                 'user' => $updatedUser,
             ]);
-        } catch(\Exception $e){
+        } catch(Exception $e){
             return response([
                 'status' => false,
                 'message' => 'Update Failed',
