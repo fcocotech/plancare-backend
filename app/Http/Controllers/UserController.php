@@ -463,4 +463,11 @@ class UserController extends Controller
 
         return response()->json(['status' => true, 'message' => 'We have verify your email address']);
     }
+
+    public function getId(Request $request, $id) {
+        $user = User::select(
+            'name','email','birthdate','nationality','address','city','zipcode','mobile_number','referral_code','profile_url','status'
+        )->where('id', $id)->first();
+        return response()->json(['status' => true, 'user' => $user]);
+    }
 }
