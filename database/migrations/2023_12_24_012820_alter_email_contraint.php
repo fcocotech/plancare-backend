@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('Users', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             //
             $table->string('email')->unique(false)->change();
         });
@@ -22,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('Users', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             //
         });
     }
