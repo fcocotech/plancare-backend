@@ -95,7 +95,8 @@ class UserController extends Controller
         //         'message' => 'Email already in use.',
         //     ]);
         // }
-
+        
+        
         $product_id = 1;
         $parent_id = 0;
         $referrerUser = User::where('referral_code',$request->referral_code)->first();

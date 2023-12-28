@@ -22,8 +22,8 @@ class DatabaseSeeder extends Seeder
         $this->call(SecurityQuestionSeeder::class);
         $this->call(CommissionsSeeder::class);
         $this->call(ModulesTableSeeder::class);
-        // $this->call(RolesTableSeeder::class);
-        // $this->call(UsersTableSeeder::class);
-        // $this->call(ProductSeeder::class);
+        $this->call(RolesTableSeeder::class);
+        $this->call(UsersTableSeeder::class);
+        $this->call(ProductSeeder::class);
     }
 }
