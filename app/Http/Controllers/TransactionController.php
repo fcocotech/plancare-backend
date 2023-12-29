@@ -40,7 +40,9 @@ class TransactionController extends Controller
         $transaction->amount = $data['amount'];
         $transaction->proof_url = $data['proof_url'];
         $transaction->processed_by = $data['processed_by'];
+        $transaction->created_by=$data['processed_by'];
         $transaction->user_id = $data['user_id'];
+        $transaction->trans_type = $data['type'];
         $transaction->status = $data['status'];
         $transaction->commission_rate = $data['commission_rate'] ?? 0;
         if(isset($data['commission_from'])){
@@ -64,10 +66,11 @@ class TransactionController extends Controller
                 $data = [
                     'user_id' => $request->id,
                     'amount' => $request->amount,
+                    'type'=>$request->trans_type,
                     'processed_by' => $user->id,
                     'payment_method' => $request->payment_method,
                     'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
-                    'description' => 'Make payment for '.$payment_for->name,
+                    'description' => $request->description,
                     'status' => 1,
                     'proof_url' => ''
                 ];
@@ -90,7 +93,7 @@ class TransactionController extends Controller
 
                     $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
                     if($productPurchase){
-                        $productPurchase->status = 'paid';
+                        $productPurchase->status = '1';
                         $productPurchase->update();
                     }
                 

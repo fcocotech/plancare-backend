@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('product_id');
             $table->integer('purchased_by');
             $table->integer('referrer_id');
-            $table->string('status')->nullable()->default('unpaid');
+            $table->integer('status')->nullable()->default('2');//1-paid, 2-unpaid,3-w_request,4-w_inprogress,5-w_released
             $table->timestamps();
             $table->softDeletes();
         });

@@ -99,7 +99,11 @@ class UserController extends Controller
         
         $product_id = 1;
         $parent_id = 0;
+        // if($request->referral_code==null)
+        //     $request->referral_code='1001';//assign to admin
         $referrerUser = User::where('referral_code',$request->referral_code)->first();
+        
+            
         // if($request->has('referral_code')){
         //     $parts = explode('-', $request->referral_code);
 
@@ -134,10 +138,12 @@ class UserController extends Controller
         $user->address          = $request->address;
         $user->birthdate        = $request->birthdate;
         $user->city             = $request->city;
+        $user->zipcode          = $request->zipcode;
         $user->email            = $request->email;
         $user->idtype           = $request->idtype;
         $user->mobile_number    = $request->mobile_number;
         $user->name             = $request->name;
+        $user->nationality      = $request->nationality;
         $user->sec_q1_ans       = $request->sec_q1_ans;
         $user->sec_q2_ans       = $request->sec_q2_ans;
         $user->sec_q3_ans       = $request->sec_q3_ans;
@@ -418,15 +424,15 @@ class UserController extends Controller
     public function teams(Request $request){
         $user = Auth::user();
         
-        $leader = User::select('id', 'name', 'email', 'profile_url')->where('reference_code', $user->referral_code)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $user->reference_code)->where('status', '1')->get();
+        $leader = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('reference_code', $user->referral_code)->first();
+        $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $user->id)->where('status', '1')->get();
 
         return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
     }
 
     public function team(Request $request, $user_id){        
         $leader = User::select('id', 'name', 'email', 'profile_url', 'reference_code')->where('id', $user_id)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $leader->reference_code)->where('status', '1')->get();
+        $members = User::select('id', 'name', 'email', 'profile_url')->where('parent_referral', $leader->id)->where('status', '1')->get();
 
         $leader->members = $members;
         return response()->json(['status' => true, 'team' => $leader]);
