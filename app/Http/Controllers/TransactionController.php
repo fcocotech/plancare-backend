@@ -60,7 +60,7 @@ class TransactionController extends Controller
     public function makePayment(Request $request) {
         try {
             $user = Auth::user();
-            $payment_for = User::find($request->id);
+            $payment_for = User::find($request->id);//get the user info of the member
 
             if($payment_for) {
                 $data = [
@@ -71,8 +71,9 @@ class TransactionController extends Controller
                     'payment_method' => $request->payment_method,
                     'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
                     'description' => $request->description,
+                    'parent_referral'=>$payment_for->parent_referral,
                     'status' => 1,
-                    'proof_url' => ''
+                    'proof_url' => null
                 ];
 
                 if($request->has('proof_of_payment') && $request->proof_of_payment != ''){

@@ -99,8 +99,8 @@ class UserController extends Controller
         
         $product_id = 1;
         $parent_id = 0;
-        // if($request->referral_code==null)
-        //     $request->referral_code='1001';//assign to admin
+        if($request->referral_code==null)
+            $request->referral_code='1001';//assign to admin
         $referrerUser = User::where('referral_code',$request->referral_code)->first();
         
             
@@ -114,7 +114,7 @@ class UserController extends Controller
 
         // referral Valid
         // $referrerUser =  $user_id;
-        // if($user_id != null){
+        // if($user_id != null)
         //     $referrerUser = User::where('id', $user_id->id)->first();
         if(!$referrerUser){
             return response()->json([
