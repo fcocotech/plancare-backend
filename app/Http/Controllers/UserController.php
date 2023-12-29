@@ -199,7 +199,7 @@ class UserController extends Controller
             }
             //send email verification after registration
             $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
-            $user->save();
+            $user->update();
             $this->sendEmailVerification($user);
             $this->sendWelcomeEmail($user);
             return response()->json(['status' => true, 'user' => $user, 'debugger' => $this->debugger]);
@@ -305,15 +305,14 @@ class UserController extends Controller
         ->first();
     }
 
-    protected function calculateCommissions($referral_code, $id, $depth = 1) {
+    protected function calculateCommissions($referral_code, $commission_from, $depth = 1) {
         if ($depth >= 16) {
             return 'recursion exceeds limit!'; // exit recursion if depth exceeds the limit
         }
 
-        $user = User::where('reference_code', $referral_code)->whereNull('deleted_at')->first();
-        $this->saveUserCommission($user, $depth, $id);
+        $user = User::where('referral_code', $referral_code)->whereNull('deleted_at')->first();
+        $this->saveUserCommission($user, $depth, $commission_from);
         $referral_code = $user->referral_code;
-        array_push($this->debugger, ['commission_user' => $user->reference_code, 'commission_level' => $depth, 'referral_code' => $referral_code]);
         if(isset($user->referral_code)){
             $this->calculateCommissions($referral_code, $id, $depth + 1);
         }

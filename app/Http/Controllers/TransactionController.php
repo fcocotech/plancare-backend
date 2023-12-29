@@ -66,7 +66,7 @@ class TransactionController extends Controller
                 $data = [
                     'user_id' => $request->id,
                     'amount' => $request->amount,
-                    'type'=>$request->trans_type,
+                    'type' => 1,
                     'processed_by' => $user->id,
                     'payment_method' => $request->payment_method,
                     'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
@@ -108,7 +108,7 @@ class TransactionController extends Controller
             } else {
                 return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']);
             }
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -128,13 +128,14 @@ class TransactionController extends Controller
                 'user_id' => $node->user_id,
                 'amount' => $commission_amount,
                 'processed_by' => $user->id,
-                'payment_method' => 'Commissions',
+                'payment_method' => 7,
                 'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
                 'description' => 'Received '.($commission->rate).'% commission from '.$from->name,
                 'status' => 1,
                 'proof_url' => '',
                 'commission_rate' => $commission->rate,
-                'commission_from' => $from->id
+                'commission_from' => $from->id,
+                'type' => 2,
             ];
 
             $datas[] = $data;
