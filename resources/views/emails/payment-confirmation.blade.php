@@ -457,15 +457,17 @@
                   <tr>
                     <td class="content-cell">
                       <div class="f-fallback">
-                        <h1>Welcome to PlanCare</h1>
+                        <h1>Payment Confirmation</h1>
                         
-                        <p>Thank you for joining PlanCare Philippines. Here is your User ID:</p><br/>
-                        <h2>{{$referral_code}}</h2>
-                        <p>Please remember your user id. You will use this to login to your account and give it as a referral code to your members.</p>
+                        <p>Thank you for your payment. Here are the details of your payment:</p><br/>
+                        <p>Transaction No: {{$trans_no}}</p><br/>
+                        <p>Amount Paid: {{$amount}}</p><br/>
+                        <p>Product Name: {{$prod_name}}</p><br/>
+                        <p></p>
                         <!-- Action -->
                        
-                        <p>If you did not create an account, please ignore this email or <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a> if you have questions.</p>
-                        <p>Thanks,
+                        <p>If you did not make this purchase please contact <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
+                        <p>Thank your,
                           <br>The Plancare PH team</p>
                         <!-- Sub copy -->
                        

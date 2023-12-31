@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('commission_level');
             $table->integer('user_id');
             $table->integer('commission_from');
-            $table->string('status')->nullable()->default('unreleased');
+            $table->integer('status')->default('0');//1-release,0-pending
             $table->timestamps();
         });
     }

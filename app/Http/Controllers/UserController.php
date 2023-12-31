@@ -116,6 +116,16 @@ class UserController extends Controller
         // $referrerUser =  $user_id;
         // if($user_id != null)
         //     $referrerUser = User::where('id', $user_id->id)->first();
+        
+        //check if referral code is already assigned to 4 slots
+        if($this->findChildCount($referrerUser->id)>4){
+            return response()->json([
+                'status' => false,
+                'message' => 'Referral code is invalid. Slot is already full. Pls use another code',
+            ]);
+        }  
+    
+
         if(!$referrerUser){
             return response()->json([
                 'status' => false,
@@ -154,9 +164,7 @@ class UserController extends Controller
         $user->status           = 2;//assign as pending
         $user->password = Hash::make($request->password);
         $user->reference_code=0;
-        //this is the referral code
-        // $user->reference_code   = '';//substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'), 0, 8);
-
+       
         $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoprofile));
         $profile_path = storage_path('app/public/images/profiles/');
         if(!File::isDirectory($profile_path)){
@@ -175,37 +183,50 @@ class UserController extends Controller
         file_put_contents($id_path.$id_name, $id_image);
         $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
 
+        //Add product purchase
+        $user->save();
+        $productPurchase = new ProductPurchase;
+        $productPurchase->product_id    = $product_id; //for now just 1 product
+        $productPurchase->purchased_by  = $user->id;
+        $productPurchase->referrer_id   = $referrerUser->id ?? 0;
+
+        $productPurchase->save();
+
+        $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
+        $user->update();
+        $this->sendEmailVerification($user);
+        $this->sendWelcomeEmail($user);
+        
+        return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase,'debugger' => $this->debugger]);
         //find all child of parentID/Referrer code
 
-        // There will be no recursion. If the user has already max members the system will prompt
-        // $newUser = $this->assignReferrer($user, $referrerUser->reference_code ?? 0, 1); // recursion start here
-        $saveuser=false;
-        if($this->findChildCount($referrerUser->id)<5){
-            if($this->findChildCount($referrerUser->id)<4){
-                $saveuser=true;
-            }else{
-                //ask user if they want to save it as 4th node or to a new parent
-            }
-        }
-        if($saveuser){
-            $user->save();
-            if($referrerUser && $referrerUser->reference_code){
-                $productPurchase = new ProductPurchase;
-                $productPurchase->product_id    = $product_id; //for now just 1 product
-                $productPurchase->purchased_by  = $user->id;
-                $productPurchase->referrer_id   = $referrerUser->id ?? 0;
+        // $saveuser=false;
+        // if($this->findChildCount($referrerUser->id)<5){
+        //     if($this->findChildCount($referrerUser->id)<4){
+        //         $saveuser=true;
+        //     }else{
+        //         //ask user if they want to save it as 4th node or to a new parent
+        //     }
+        // }
+        // if($saveuser){
+        //     $user->save();
+        //     if($referrerUser){
+        //         $productPurchase = new ProductPurchase;
+        //         $productPurchase->product_id    = $product_id; //for now just 1 product
+        //         $productPurchase->purchased_by  = $user->id;
+        //         $productPurchase->referrer_id   = $referrerUser->id ?? 0;
         
-                $productPurchase->save();
-            }
-            //send email verification after registration
-            $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
-            $user->update();
-            $this->sendEmailVerification($user);
-            $this->sendWelcomeEmail($user);
-            return response()->json(['status' => true, 'user' => $user, 'debugger' => $this->debugger]);
-        }else{
-            return response()->json(['status' => false, 'user' => $user, 'debugger' => $this->debugger]);
-        }
+        //         $productPurchase->save();
+        //     }
+        //     //send email verification after registration
+        //     $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
+        //     $user->update();
+        //     $this->sendEmailVerification($user);
+        //     $this->sendWelcomeEmail($user);
+        //     return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase,'debugger' => $this->debugger]);
+        // }else{
+        //     return response()->json(['status' => false, 'user' => $user, 'debugger' => $this->debugger]);
+        // }
         
     }
 
