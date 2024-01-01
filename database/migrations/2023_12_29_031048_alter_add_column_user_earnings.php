@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            $table->double('commission_rate')->nullable();
-            $table->integer('commission_from')->nullable();
+        Schema::table('users', function (Blueprint $table) {
+         $table->double('current_points')->nullable();
         });
     }
 

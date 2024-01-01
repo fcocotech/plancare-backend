@@ -95,10 +95,15 @@ class UserController extends Controller
         //         'message' => 'Email already in use.',
         //     ]);
         // }
-
+        
+        
         $product_id = 1;
         $parent_id = 0;
+        if($request->referral_code==null)
+            $request->referral_code='1001';//assign to admin
         $referrerUser = User::where('referral_code',$request->referral_code)->first();
+        
+            
         // if($request->has('referral_code')){
         //     $parts = explode('-', $request->referral_code);
 
@@ -109,8 +114,18 @@ class UserController extends Controller
 
         // referral Valid
         // $referrerUser =  $user_id;
-        // if($user_id != null){
+        // if($user_id != null)
         //     $referrerUser = User::where('id', $user_id->id)->first();
+        
+        //check if referral code is already assigned to 4 slots
+        if($this->findChildCount($referrerUser->id)>4){
+            return response()->json([
+                'status' => false,
+                'message' => 'Referral code is invalid. Slot is already full. Pls use another code',
+            ]);
+        }  
+    
+
         if(!$referrerUser){
             return response()->json([
                 'status' => false,
@@ -133,10 +148,12 @@ class UserController extends Controller
         $user->address          = $request->address;
         $user->birthdate        = $request->birthdate;
         $user->city             = $request->city;
+        $user->zipcode          = $request->zipcode;
         $user->email            = $request->email;
         $user->idtype           = $request->idtype;
         $user->mobile_number    = $request->mobile_number;
         $user->name             = $request->name;
+        $user->nationality      = $request->nationality;
         $user->sec_q1_ans       = $request->sec_q1_ans;
         $user->sec_q2_ans       = $request->sec_q2_ans;
         $user->sec_q3_ans       = $request->sec_q3_ans;
@@ -147,9 +164,7 @@ class UserController extends Controller
         $user->status           = 2;//assign as pending
         $user->password = Hash::make($request->password);
         $user->reference_code=0;
-        //this is the referral code
-        // $user->reference_code   = '';//substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'), 0, 8);
-
+       
         $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoprofile));
         $profile_path = storage_path('app/public/images/profiles/');
         if(!File::isDirectory($profile_path)){
@@ -168,22 +183,51 @@ class UserController extends Controller
         file_put_contents($id_path.$id_name, $id_image);
         $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
 
+        //Add product purchase
+        $user->save();
+        $productPurchase = new ProductPurchase;
+        $productPurchase->product_id    = $product_id; //for now just 1 product
+        $productPurchase->purchased_by  = $user->id;
+        $productPurchase->referrer_id   = $referrerUser->id ?? 0;
+
+        $productPurchase->save();
+
+        $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
+        $user->update();
+        $this->sendEmailVerification($user);
+        $this->sendWelcomeEmail($user);
+        
+        return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase,'debugger' => $this->debugger]);
         //find all child of parentID/Referrer code
 
-        // There will be no recursion. If the user has already max members the system will prompt
-        // $newUser = $this->assignReferrer($user, $referrerUser->reference_code ?? 0, 1); // recursion start here
-        $user->save();
-        if($referrerUser && $referrerUser->reference_code){
-            $productPurchase = new ProductPurchase;
-            $productPurchase->product_id    = $product_id; //for now just 1 product
-            $productPurchase->purchased_by  = $user->id;
-            $productPurchase->referrer_id   = $referrerUser->id ?? 0;
-    
-            $productPurchase->save();
-        }
-        //send email verification after registration
-        $this->sendEmailVerification($user);
-        return response()->json(['status' => true, 'user' => $user, 'debugger' => $this->debugger]);
+        // $saveuser=false;
+        // if($this->findChildCount($referrerUser->id)<5){
+        //     if($this->findChildCount($referrerUser->id)<4){
+        //         $saveuser=true;
+        //     }else{
+        //         //ask user if they want to save it as 4th node or to a new parent
+        //     }
+        // }
+        // if($saveuser){
+        //     $user->save();
+        //     if($referrerUser){
+        //         $productPurchase = new ProductPurchase;
+        //         $productPurchase->product_id    = $product_id; //for now just 1 product
+        //         $productPurchase->purchased_by  = $user->id;
+        //         $productPurchase->referrer_id   = $referrerUser->id ?? 0;
+        
+        //         $productPurchase->save();
+        //     }
+        //     //send email verification after registration
+        //     $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
+        //     $user->update();
+        //     $this->sendEmailVerification($user);
+        //     $this->sendWelcomeEmail($user);
+        //     return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase,'debugger' => $this->debugger]);
+        // }else{
+        //     return response()->json(['status' => false, 'user' => $user, 'debugger' => $this->debugger]);
+        // }
+        
     }
 
     public function findChildCount($parentid){
@@ -204,6 +248,19 @@ class UserController extends Controller
         }
 
         return $prodid . $parentid . $userid;
+    }
+    public function ApigenerateReferralCode(Request $request){
+        $strparentid;
+        if($request->parentid<1){
+            $request->parentid="000";
+        }
+        elseif($request->parentid<10){
+            $request->parentid="00" . $request->parentid;
+        }elseif($request->parentid<100){
+            $request->parentid="0" . $request->parentid;
+        }
+
+        return $request->prodid . $request->parentid . $request->userid;
     }
     public function assignReferrer(User $newUser, $initialReferrerCode = null, $initialReferrerId = 0, $depth = 1) {
         $checker = "";
@@ -269,15 +326,14 @@ class UserController extends Controller
         ->first();
     }
 
-    protected function calculateCommissions($referral_code, $id, $depth = 1) {
+    protected function calculateCommissions($referral_code, $commission_from, $depth = 1) {
         if ($depth >= 16) {
             return 'recursion exceeds limit!'; // exit recursion if depth exceeds the limit
         }
 
-        $user = User::where('reference_code', $referral_code)->whereNull('deleted_at')->first();
-        $this->saveUserCommission($user, $depth, $id);
+        $user = User::where('referral_code', $referral_code)->whereNull('deleted_at')->first();
+        $this->saveUserCommission($user, $depth, $commission_from);
         $referral_code = $user->referral_code;
-        array_push($this->debugger, ['commission_user' => $user->reference_code, 'commission_level' => $depth, 'referral_code' => $referral_code]);
         if(isset($user->referral_code)){
             $this->calculateCommissions($referral_code, $id, $depth + 1);
         }
@@ -300,6 +356,14 @@ class UserController extends Controller
         });
     }
 
+    public function sendWelcomeEmail($user) {
+        // $token = Str::random(32).$user->id;
+        Mail::send('emails.register-user', [
+            'referral_code' => $user->referral_code,
+        ], function ($message) use ($user) {
+            $message->to($user->email)->subject('Welcome to PlanCare Philippines');
+        });
+    }
     public function update(Request $request, $user_id) {
         try{
             $user = User::where('id', $user_id)->first();
@@ -367,7 +431,7 @@ class UserController extends Controller
                 'message' => 'Update Successful',
                 'user' => $updatedUser,
             ]);
-        } catch(\Exception $e){
+        } catch(Exception $e){
             return response([
                 'status' => false,
                 'message' => 'Update Failed',
@@ -380,15 +444,15 @@ class UserController extends Controller
     public function teams(Request $request){
         $user = Auth::user();
         
-        $leader = User::select('id', 'name', 'email', 'profile_url')->where('reference_code', $user->referral_code)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $user->reference_code)->where('status', '1')->get();
+        $leader = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('reference_code', $user->referral_code)->first();
+        $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $user->id)->where('status', '1')->get();
 
         return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
     }
 
     public function team(Request $request, $user_id){        
         $leader = User::select('id', 'name', 'email', 'profile_url', 'reference_code')->where('id', $user_id)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url')->where('referral_code', $leader->reference_code)->where('status', '1')->get();
+        $members = User::select('id', 'name', 'email', 'profile_url')->where('parent_referral', $leader->id)->where('status', '1')->get();
 
         $leader->members = $members;
         return response()->json(['status' => true, 'team' => $leader]);
@@ -424,5 +488,12 @@ class UserController extends Controller
         });
 
         return response()->json(['status' => true, 'message' => 'We have verify your email address']);
+    }
+
+    public function getId(Request $request, $id) {
+        $user = User::select(
+            'name','email','birthdate','nationality','address','city','zipcode','mobile_number','referral_code','profile_url','status'
+        )->where('id', $id)->first();
+        return response()->json(['status' => true, 'user' => $user]);
     }
 }

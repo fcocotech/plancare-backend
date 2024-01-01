@@ -18,7 +18,7 @@ Route::post('/login', 'App\Http\Controllers\AuthController@login')->withoutMiddl
 // Security Question  
 Route::get('/security-questions/get-all', 'App\Http\Controllers\SecurityQuestionController@get')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 Route::post('/register/user', 'App\Http\Controllers\UserController@create')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
-Route::post('/childcount', 'App\Http\Controllers\UserController@apifindChildCount');
+
 // User
 Route::get('/verify-email/{token}', 'App\Http\Controllers\UserController@emailVerify')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 
@@ -36,16 +36,19 @@ Route::middleware('auth:api')->group(function () {
 
     // User
     Route::get('/users', 'App\Http\Controllers\UserController@get');
+    Route::get('/user/{id}', 'App\Http\Controllers\UserController@getId');
     Route::get('/users/card-totals', 'App\Http\Controllers\UserController@getCardData');
     Route::post('/user/update/{user_id}', 'App\Http\Controllers\UserController@update');
     Route::get('/teams', 'App\Http\Controllers\UserController@teams');
     Route::get('/team/{user_id}', 'App\Http\Controllers\UserController@team');
     Route::get('/member/{user_id}', 'App\Http\Controllers\UserController@member');
-
+    Route::post('/childcount', 'App\Http\Controllers\UserController@apifindChildCount');
+    Route::post('/generatereferralcode', 'App\Http\Controllers\UserController@ApigenerateReferralCode');
     //Transactions
     Route::get('/transactions/get', 'App\Http\Controllers\TransactionController@get');
     Route::get('/transactions/earnings', 'App\Http\Controllers\TransactionController@earnings');
     Route::post('/transaction/make-payment', 'App\Http\Controllers\TransactionController@makePayment');
+    Route::post('/transaction/commission', 'App\Http\Controllers\TransactionController@APIcommissionDistribution2');
 
     // Products
     Route::post('/add/new-product', 'App\Http\Controllers\ProductController@create');

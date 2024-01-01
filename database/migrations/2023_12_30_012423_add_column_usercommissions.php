@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
+        Schema::table('user_commissions', function (Blueprint $table) {
             //
-            $table->integer('status')->change();
+            $table->double('comm_rate')->default(0);
+            $table->double('comm_amt')->default(0);
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
+        Schema::table('user_commissions', function (Blueprint $table) {
             //
         });
     }
