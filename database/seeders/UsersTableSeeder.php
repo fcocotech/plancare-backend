@@ -24,5 +24,7 @@ class UsersTableSeeder extends Seeder
             'referral_code' => '10011',
             'parent_referral'=>'0'
         ]);
+
+        
     }
 }
