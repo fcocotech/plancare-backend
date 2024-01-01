@@ -19,8 +19,9 @@ class UsersTableSeeder extends Seeder
             'password' => Hash::make('123456'),
             'is_admin' => 1,
             'status' => 1,
-            'reference_code'=>'1001',
-            'referral_code' => '1001',
+            'role_id'=>1,
+            'reference_code'=>'0',
+            'referral_code' => '10011',
             'parent_referral'=>'0'
         ]);
     }
