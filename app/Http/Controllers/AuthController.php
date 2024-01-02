@@ -48,11 +48,11 @@ class AuthController extends Controller
         }
         
         // If authentication failed, check if it's because of pending status
-        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password'], 'status' => 2])) {
+        if (Auth::attempt(['referral_code' => $credentials['referral_code'], 'password' => $credentials['password'], 'status' => 2])) {
             return response()->json(['status' => false, 'message' => 'Account status still pending!'], 200);
         } 
 
-        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
+        if (Auth::attempt(['referral_code' => $credentials['referral_code'], 'password' => $credentials['password']])) {
             return response()->json(['status' => false, 'message' => 'Account status inactive!'], 200);
         } 
 
