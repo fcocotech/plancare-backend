@@ -31,7 +31,41 @@ class UserController extends Controller
     }
 
     public function get(Request $request) {
-        $users = User::select('users.id','users.name','users.email','users.referral_code','users.status')
+
+        $users = array("profile"=>User::select('users.id','users.name','users.email','users.referral_code','users.status')
+        ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
+        ->selectRaw('(SELECT p.name FROM product_purchases pp
+                        LEFT JOIN products p ON pp.product_id = p.id
+                        WHERE pp.purchased_by = users.id
+                        ORDER BY pp.created_at ASC
+                        LIMIT 1) as product_name')
+        ->selectRaw('(SELECT p.price FROM product_purchases pp
+                        LEFT JOIN products p ON pp.product_id = p.id
+                        WHERE pp.purchased_by = users.id
+                        ORDER BY pp.created_at ASC
+                        LIMIT 1) as product_price')
+        ->selectRaw('(SELECT pp.id FROM product_purchases pp
+                        WHERE pp.purchased_by = users.id
+                    ) as product_purchase_id')
+        ->leftJoin('transactions as tr', function ($join) {
+            $join->on('tr.user_id', '=', 'users.id')
+                ->where('tr.payment_method', 'Commissions');
+        })
+        ->where('users.is_admin', '!=', 1));
+
+        if ($request->filter!=0) {
+           $users["profile"]->where('users.status', $request->filter);//gets all active user
+              
+        }
+
+        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status')->get();
+
+        return response()->json(['status' => true, 'users' => $users["profile"], 'params' => $request->filter]);
+    }
+
+    public function getMembers(Request $request) {
+
+        $users =User::select('users.id','users.name','users.email','users.referral_code','users.status')
         ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
         ->selectRaw('(SELECT p.name FROM product_purchases pp
                         LEFT JOIN products p ON pp.product_id = p.id
@@ -53,11 +87,11 @@ class UserController extends Controller
         ->where('users.is_admin', '!=', 1);
 
         if ($request->filter!=0) {
-           $users->where('users.status', $request->filter);
+           $users->where('users.status', $request->filter);//gets all active user
               
         }
 
-        $users = $users->groupBy('users.id','users.name','users.email','users.referral_code','users.status')->get();
+        $users= $users->groupBy('users.id','users.name','users.email','users.referral_code','users.status')->get()->members;
 
         return response()->json(['status' => true, 'users' => $users, 'params' => $request->filter]);
     }
@@ -450,13 +484,19 @@ class UserController extends Controller
         $leader = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('reference_code', $user->referral_code)->first();
         $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $user->id)->where('status', '1')->get();
 
+        foreach($members as $mem){
+            $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
+            $mem->myteam=$member_child;
+        }
+        
+
         return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
     }
 
     public function team(Request $request, $user_id){        
         $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('id', $user_id)->first();
         $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $leader->id)->where('status', '1')->get();
-
+        
         $leader->members = $members;
         return response()->json(['status' => true, 'team' => $leader]);
     }

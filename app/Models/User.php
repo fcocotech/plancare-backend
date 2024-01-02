@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -51,7 +52,7 @@ class User extends Authenticatable
     }
 
     public function parent() {
-        return $this->hasOne(User::class, 'reference_code', 'reference_code')->select('id', 'name');
+        return $this->hasOne(User::class, 'referral_code', 'referral_code')->select('id', 'name');
     }
 
     public function getSecQ1AnsAttribute($value) { return str_repeat('*', strlen($value)); }
@@ -59,4 +60,8 @@ class User extends Authenticatable
     public function getSecQ3AnsAttribute($value) { return str_repeat('*', strlen($value)); }
     public function getSecQ4AnsAttribute($value) { return str_repeat('*', strlen($value)); }
     public function getSecQ5AnsAttribute($value) { return str_repeat('*', strlen($value)); }
+
+    public function members(): HasMany{
+        return $this->hasMany(User::class,'parent_referral');
+    }
 }
