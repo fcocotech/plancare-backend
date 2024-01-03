@@ -404,11 +404,8 @@ class UserController extends Controller
 
     public function updateUserStatus(Request $request){
         $user = User::where('id', $request->id)->first();
-
         $user->status= 3;
-
         $user->delete();
-
         return response()->json(['status' => true, 'user' => $user]);
     }
     public function update(Request $request, $user_id) {
