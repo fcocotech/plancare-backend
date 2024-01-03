@@ -52,6 +52,10 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/transaction/make-payment', 'App\Http\Controllers\TransactionController@makePayment');
     Route::post('/transaction/commission', 'App\Http\Controllers\TransactionController@APIcommissionDistribution2');
 
+    //WithdrawalAccount
+    Route::post('withdrawal-account/{user_id}/{account_type}', 'App\Http\Controllers\WithdrawalAccountController@store');
+    Route::get('withdrawal-accounts/{user_id}', 'App\Http\Controllers\WithdrawalAccountController@get'); 
+
     // Products
     Route::post('/add/new-product', 'App\Http\Controllers\ProductController@create');
     Route::delete('/product/delete/{product_id}', 'App\Http\Controllers\ProductController@delete');
