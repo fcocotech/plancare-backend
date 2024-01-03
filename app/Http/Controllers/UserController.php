@@ -18,9 +18,9 @@ class UserController extends Controller
 
     public function getCardData(Request $request) {
         $sql = "SELECT 
-                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0) as total_users,
-                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '2') as pending_users,
-                    (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '1') as total_active
+                    (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0) as total_users,
+                    (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '2') as pending_users,
+                    (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '1') as total_active
                 FROM users u LIMIT 1
         ";
         $totals = DB::select($sql);
@@ -299,64 +299,64 @@ class UserController extends Controller
 
         return $request->prodid . $request->parentid . $request->userid;
     }
-    public function assignReferrer(User $newUser, $initialReferrerCode = null, $initialReferrerId = 0, $depth = 1) {
-        $checker = "";
-        $referrals = null;
-        $newReferrerCode = '';
-        // check if the depth exceeds the limit
-        if ($depth >= 16) {
-            return 'recursion exceeds limit!'; // exit recursion if depth exceeds the limit
-        }
+    // public function assignReferrer(User $newUser, $initialReferrerCode = null, $initialReferrerId = 0, $depth = 1) {
+    //     $checker = "";
+    //     $referrals = null;
+    //     $newReferrerCode = '';
+    //     // check if the depth exceeds the limit
+    //     if ($depth >= 16) {
+    //         return 'recursion exceeds limit!'; // exit recursion if depth exceeds the limit
+    //     }
     
-        $referrer = $this->getReferrerNodeCount($initialReferrerCode);
+    //     $referrer = $this->getReferrerNodeCount($initialReferrerCode);
 
-        if ($referrer) { // node has slot available
-            $newUser->referral_code = $referrer->reference_code;
-            // $newUser->level = $depth;
-            $newUser->save();
-            $this->calculateCommissions($referrer->reference_code, $newUser->id);
-            $this->sendEmailVerification($newUser);
-            // $referral = new Referral;
-            // $referral->referrer_code = $initialReferrerCode;
-            // $referral->referrer_user_id = $initialReferrerId;
-            // $referral->referred_user_id = $newUser->id;
+    //     if ($referrer) { // node has slot available
+    //         $newUser->referral_code = $referrer->reference_code;
+    //         // $newUser->level = $depth;
+    //         $newUser->save();
+    //         $this->calculateCommissions($referrer->reference_code, $newUser->id);
+    //         $this->sendEmailVerification($newUser);
+    //         // $referral = new Referral;
+    //         // $referral->referrer_code = $initialReferrerCode;
+    //         // $referral->referrer_user_id = $initialReferrerId;
+    //         // $referral->referred_user_id = $newUser->id;
 
-            // $commissions = Commission::where('level', $newUser->level)->first();
-            // $referral->rate_id = $commissions->id;
+    //         // $commissions = Commission::where('level', $newUser->level)->first();
+    //         // $referral->rate_id = $commissions->id;
 
 
-            // $referral->save();
-            array_push($this->debugger, ['referrer' => $referrer]);
-            return $newUser;
-        } else { // no slot available find another child nodes with available slot
-            if ($depth >= 2 ) {
-                    $referrals = User::where('referral_code', $initialReferrerCode)->whereNull('deleted_at')->orderBy('created_at', 'asc')->get();
-                    array_push($this->debugger, ['referrals' => $referrals]);
-                    foreach($referrals as $referral){
-                        $initialReferrerCode = $referral->reference_code;
-                        $initialReferrerId = $referral->id;
-                        $referrer = $this->getReferrerNodeCount($initialReferrerCode);
-                        if($referrer) { 
-                            $newReferrerCode = $referral->reference_code;
-                            // add user
-                            $newUser->referral_code = $newReferrerCode;
-                            $newUser->save();
+    //         // $referral->save();
+    //         array_push($this->debugger, ['referrer' => $referrer]);
+    //         return $newUser;
+    //     } else { // no slot available find another child nodes with available slot
+    //         if ($depth >= 2 ) {
+    //                 $referrals = User::where('referral_code', $initialReferrerCode)->whereNull('deleted_at')->orderBy('created_at', 'asc')->get();
+    //                 array_push($this->debugger, ['referrals' => $referrals]);
+    //                 foreach($referrals as $referral){
+    //                     $initialReferrerCode = $referral->reference_code;
+    //                     $initialReferrerId = $referral->id;
+    //                     $referrer = $this->getReferrerNodeCount($initialReferrerCode);
+    //                     if($referrer) { 
+    //                         $newReferrerCode = $referral->reference_code;
+    //                         // add user
+    //                         $newUser->referral_code = $newReferrerCode;
+    //                         $newUser->save();
                             
-                            $this->calculateCommissions($newReferrerCode, $newUser->id);
-                            $this->sendEmailVerification($newUser);
-                            return $newUser;
-                        }
-                    }
-                    if(!$referrer && $newReferrerCode == ''){
-                        $this->assignReferrer($newUser, $initialReferrerCode, $initialReferrerId, $depth + 1);
-                    }
-            } else {
-                $this->assignReferrer($newUser, $initialReferrerCode, $initialReferrerId, $depth + 1);
-            }
-        }
+    //                         $this->calculateCommissions($newReferrerCode, $newUser->id);
+    //                         $this->sendEmailVerification($newUser);
+    //                         return $newUser;
+    //                     }
+    //                 }
+    //                 if(!$referrer && $newReferrerCode == ''){
+    //                     $this->assignReferrer($newUser, $initialReferrerCode, $initialReferrerId, $depth + 1);
+    //                 }
+    //         } else {
+    //             $this->assignReferrer($newUser, $initialReferrerCode, $initialReferrerId, $depth + 1);
+    //         }
+    //     }
 
-        array_push($this->debugger, ['referrer' => $referrer, 'newReferrerCode' => $newReferrerCode, 'depth' => $depth]);
-    }
+    //     array_push($this->debugger, ['referrer' => $referrer, 'newReferrerCode' => $newReferrerCode, 'depth' => $depth]);
+    // }
 
     protected function getReferrerNodeCount($initialReferrerCode) {
         return User::where('reference_code', $initialReferrerCode)->whereRaw('(SELECT COUNT(*) FROM users AS u WHERE `u`.`referral_code` = "'.$initialReferrerCode.'" AND u.deleted_at IS NULL) < 4')
@@ -400,6 +400,14 @@ class UserController extends Controller
         ], function ($message) use ($user) {
             $message->to($user->email)->subject('Welcome to PlanCare Philippines');
         });
+    }
+
+    public function updateUserStatus(Request $request){
+        $user = User::where('id', $request->id)->first();
+
+        $user->status= 3;
+
+        $user->delete();
     }
     public function update(Request $request, $user_id) {
         try{

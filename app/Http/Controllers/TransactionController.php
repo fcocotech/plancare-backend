@@ -101,7 +101,7 @@ class TransactionController extends Controller
                     // commission distribution
                     // $datas = $this->commissionDistribution($payment_for, $request->amount);
                     $this->assignCommission($payment_for,0.3,$request->amount);
-
+                    
                     return response()->json(['status' => true, 'message' => "Payment Successful"]);
                 } else {
                     return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
