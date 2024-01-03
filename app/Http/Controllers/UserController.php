@@ -408,6 +408,8 @@ class UserController extends Controller
         $user->status= 3;
 
         $user->delete();
+
+        return response()->json(['status' => true, 'user' => $user]);
     }
     public function update(Request $request, $user_id) {
         try{
