@@ -12,6 +12,15 @@ class WithdrawalAccountController extends Controller
         return response()->json(['status' => true, 'accounts' => $withdrawalAccounts]);
     }
 
+    public function getActive(Request $request, $user_id){
+        $withdrawalAccounts = WithdrawalAccount::with(['types'])->where('user_id', $user_id)->where('status', 1)->get();
+        $accounts = [];
+        foreach($withdrawalAccounts as $key => $withdrawalAccount){
+            $accounts[$key]['code'] = $withdrawalAccount->id;
+            $accounts[$key]['name'] = $withdrawalAccount->types->name;
+        }
+        return response()->json(['status' => true, 'accounts' => $accounts]);
+    }
 
     public function store(Request $request, $user_id, $account_type)
     {

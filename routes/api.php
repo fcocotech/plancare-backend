@@ -57,7 +57,8 @@ Route::middleware('auth:api')->group(function () {
 
     //WithdrawalAccount
     Route::post('withdrawal-account/{user_id}/{account_type}', 'App\Http\Controllers\WithdrawalAccountController@store');
-    Route::get('withdrawal-accounts/{user_id}', 'App\Http\Controllers\WithdrawalAccountController@get'); 
+    Route::get('withdrawal-accounts/{user_id}', 'App\Http\Controllers\WithdrawalAccountController@get');
+    Route::get('active-withdrawal-accounts/{user_id}', 'App\Http\Controllers\WithdrawalAccountController@getActive'); 
 
     // Products
     Route::post('/add/new-product', 'App\Http\Controllers\ProductController@create');

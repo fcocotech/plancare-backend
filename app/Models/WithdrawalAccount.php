@@ -17,4 +17,8 @@ class WithdrawalAccount extends Model
         'account_number',
         'status',
     ];
+
+    public function types() {
+        return $this->hasOne(WithdrawalAccountType::class, 'id', 'type');
+    }
 }
