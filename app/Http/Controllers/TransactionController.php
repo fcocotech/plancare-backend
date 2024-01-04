@@ -104,7 +104,7 @@ class TransactionController extends Controller
                     $this->assignCommission($payment_for,0.3,$request->amount);
                     
                     //send email confirmation
-                    $this->sendPaymentConfirmationEmail($transaction->transaction_id,$payment_for,$product);
+                    // $this->sendPaymentConfirmationEmail($transaction->transaction_id,$payment_for,$product);
 
                     return response()->json(['status' => true, 'message' => "Payment Successful"]);
                 } else {
