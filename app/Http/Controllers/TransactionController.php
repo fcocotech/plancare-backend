@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\{Transaction, UserCommission, Commission, ProductPurchase};
+use App\Models\{Transaction, UserCommission, Commission, ProductPurchase,Product};
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\{File};
@@ -93,6 +93,7 @@ class TransactionController extends Controller
                     $payment_for->update();
 
                     $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
+                    $product = Product::where('id',$productPurchase->product_id);
                     if($productPurchase){
                         $productPurchase->status = '1';
                         $productPurchase->update();
@@ -102,6 +103,9 @@ class TransactionController extends Controller
                     // $datas = $this->commissionDistribution($payment_for, $request->amount);
                     $this->assignCommission($payment_for,0.3,$request->amount);
                     
+                    //send email confirmation
+                    $this->sendPaymentConfirmationEmail($transaction->transaction_id,$payment_for,$product);
+
                     return response()->json(['status' => true, 'message' => "Payment Successful"]);
                 } else {
                     return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
@@ -112,6 +116,15 @@ class TransactionController extends Controller
         } catch(Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
         }
+    }
+
+    public function sendPaymentConfirmationEmail($trans_no,$user,$product) {
+        // $token = Str::random(32).$user->id;
+        Mail::send('emails.payment-confirmation', [
+            'name' => $user->name,'trans_no'=>$trans_no,'amount'=>$product->price,'prod_name'=>$product->name
+        ], function ($message) use ($user,$trans_no) {
+            $message->to($user->email)->subject('Payment Confirmation: ' . $trans_no);
+        });
     }
 
     protected function commissionDistribution($from, $amount_paid) {
@@ -185,20 +198,20 @@ class TransactionController extends Controller
     //     return ['data' => $datas, 'nodes' => $connectedNodes];
     // }
 
-    public function APIcommissionDistribution2(Request $request) {
-        // $datas = [];
-        try{
-            $user = Auth::user();
-            $member =  User::find($request->id);
+    // public function APIcommissionDistribution2(Request $request) {
+    //     // $datas = [];
+    //     try{
+    //         $user = Auth::user();
+    //         $member =  User::find($request->id);
                        
-            // $parent = User::where('parent_referral',$member->parent_referral);
-            $this->assignCommission($member,$request->rate,$request->amt);
+    //         // $parent = User::where('parent_referral',$member->parent_referral);
+    //         $this->assignCommission($member,$request->rate,$request->amt);
 
-            return response()->json(['status' => true, 'message' => 'Success']);
-        }catch(Exception $e){
-            return response()->json(['status' => false, 'message' => $e->getMessage()]);
-        }
-    }
+    //         return response()->json(['status' => true, 'message' => 'Success']);
+    //     }catch(Exception $e){
+    //         return response()->json(['status' => false, 'message' => $e->getMessage()]);
+    //     }
+    // }
 
     protected function assignCommission($member,$comm_rate,$amt){
         $user = Auth::user();
