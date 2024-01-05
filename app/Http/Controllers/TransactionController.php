@@ -6,10 +6,13 @@ use Illuminate\Http\Request;
 use App\Models\{Transaction, UserCommission, Commission, ProductPurchase,Product};
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\{File};
+use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
+    
     public function get() {
         $user = Auth::user();
 
@@ -33,33 +36,44 @@ class TransactionController extends Controller
     }
 
     public function create($data) {
-        $transaction = new Transaction;
-        $transaction->transaction_id = $data['transaction_id'];
-        $transaction->description = $data['description'];
-        $transaction->payment_method = $data['payment_method'];
-        $transaction->amount = $data['amount'];
-        $transaction->proof_url = $data['proof_url'];
-        $transaction->processed_by = $data['processed_by'];
-        $transaction->created_by=$data['processed_by'];
-        $transaction->user_id = $data['user_id'];
-        $transaction->trans_type = $data['type'];
-        $transaction->status = $data['status'];
-        $transaction->commission_rate = $data['commission_rate'] ?? 0;
-        if(isset($data['commission_from'])){
-            $transaction->commission_from = $data['commission_from'];
+        DB::beginTransaction();
+        try{
+            $transaction = new Transaction;
+            $transaction->transaction_id = $data['transaction_id'];
+            $transaction->description = $data['description'];
+            $transaction->payment_method = $data['payment_method'];
+            $transaction->amount = $data['amount'];
+            $transaction->proof_url = $data['proof_url'];
+            $transaction->processed_by = $data['processed_by'];
+            $transaction->created_by=$data['processed_by'];
+            $transaction->user_id = $data['user_id'];
+            $transaction->trans_type = $data['type'];
+            $transaction->status = $data['status'];
+            $transaction->commission_rate = $data['commission_rate'] ?? 0;
+            if(isset($data['commission_from'])){
+                $transaction->commission_from = $data['commission_from'];
+            }
+    
+            $transaction->save();
+            DB::commit();
+            return [
+                "status" => true,
+                "message" => 'Transaction complete'
+            ];
+        }catch(Exception $e){
+            DB::rollback();
+            return [
+                "status" => false,
+                "message" => 'Transaction failed'
+            ];
         }
-
-        $transaction->save();
-
-        return [
-            "status" => true,
-            "message" => 'Transaction complete'
-        ];
+       
     }
 
     public function makePayment(Request $request) {
         DB::beginTransaction();
         try {
+            
             $user = Auth::user();
             $payment_for = User::find($request->id);//get the user info of the member
 
@@ -94,20 +108,20 @@ class TransactionController extends Controller
                     $payment_for->update();
 
                     $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
-                    $product = Product::where('id',$productPurchase->product_id);
+                    $product = Product::where('id',$productPurchase->product_id)->first();;
                     if($productPurchase){
                         $productPurchase->status = '1';
                         $productPurchase->update();
                     }
-                
+                    
                     // commission distribution
-                    // $datas = $this->commissionDistribution($payment_for, $request->amount);
+                    DB::commit();
                     $this->assignCommission($payment_for,0.3,$request->amount);
                     
                     //send email confirmation
-                    // $this->sendPaymentConfirmationEmail($transaction->transaction_id,$payment_for,$product);
-                    DB::commit();
-                    return response()->json(['status' => true, 'message' => "Payment Successful"]);
+                    $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
+                   
+                    return response()->json(['status' => true,'object'=>$product, 'message' => "Payment Successful"]);
                 } else {
                     return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
                 }
@@ -119,15 +133,21 @@ class TransactionController extends Controller
             DB::rollback();
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
         }
+        
     }
 
     public function sendPaymentConfirmationEmail($trans_no,$user,$product) {
+
         // $token = Str::random(32).$user->id;
+        try{
         Mail::send('emails.payment-confirmation', [
             'name' => $user->name,'trans_no'=>$trans_no,'amount'=>$product->price,'prod_name'=>$product->name
         ], function ($message) use ($user,$trans_no) {
             $message->to($user->email)->subject('Payment Confirmation: ' . $trans_no);
         });
+        }catch(Exception $e){
+            throw $e;
+        }
     }
 
     // protected function commissionDistribution($from, $amount_paid) {
@@ -217,7 +237,7 @@ class TransactionController extends Controller
     // }
 
     protected function assignCommission($member,$comm_rate,$amt){
-        DB::befginTransaction();
+        DB::beginTransaction();
         try{
             $user = Auth::user();
             $parent = User::find($member->parent_referral);
@@ -265,7 +285,7 @@ class TransactionController extends Controller
             }else{
                 return false;
             }
-        }catch(\Exception $e){
+        }catch(Exception $e){
             DB::rollback();
             return false;
         }

@@ -458,11 +458,11 @@
                     <td class="content-cell">
                       <div class="f-fallback">
                         <h1>Payment Confirmation</h1>
-                        
+                        <p>Hi, {{$name}}</p>
                         <p>Thank you for your payment. Here are the details of your payment:</p><br/>
-                        <p>Transaction No: {{$trans_no}}</p><br/>
-                        <p>Amount Paid: {{$amount}}</p><br/>
-                        <p>Product Name: {{$prod_name}}</p><br/>
+                        <p>Transaction No: {{$trans_no}}</p>
+                        <p>Amount Paid: {{$amount}}</p>
+                        <p>Product Name: {{$prod_name}}</p>
                         <p></p>
                         <!-- Action -->
                        
