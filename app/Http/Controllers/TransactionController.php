@@ -248,7 +248,7 @@ class TransactionController extends Controller
             $commission->save();
 
             if($comm_rate==0.3){
-                return $this->assignCommission($parent,0.2,$amt);
+                return $this->assignCommission($parent,0.1,$amt);
             }else{
                 return $this->assignCommission($parent,$comm_rate/2,$amt);
             }
