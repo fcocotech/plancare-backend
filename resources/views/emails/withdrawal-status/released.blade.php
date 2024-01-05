@@ -457,20 +457,23 @@
                   <tr>
                     <td class="content-cell">
                       <div class="f-fallback">
-                        <h1>Payment Confirmation</h1>
+                        <h1>Withdrawal Released</h1>
                         <p>Hi, {{$name}}</p>
-                        <p>Thank you for your payment. Here are the details of your payment:</p><br/>
-                        <p>Transaction No: {{$trans_no}}</p>
-                        <p>Amount Paid: {{$amount}}</p>
-                        <p>Product Name: {{$prod_name}}</p>
-                        <p></p>
+                        <p>We are pleased to inform you that your withdrawal request for <b>{{$tran_no}}</b> has been released. The funds have been processed and are on their way to your account through <b>{{$withdrawal_method}}</b>.</p>
+                        <p><b>Transaction Details</b></p>
+                        <p style="margin: 0;">Transaction No: <b>{{$trans_no}}</b></p>
+                        <p style="margin: 0;">Amount Released: <b>{{$amount_to_withdraw}}</b></p>
+                        <p style="margin: 0;">Admin Fee Deducted: <b>{{$admin_fee}}</b></p>
+                        <p><b>Total Amount Released: {{$amount_to_receive}}</b></p>
+                        <p><b>Withdrawal Method: {{$withdrawal_method}}</b></p>
                         <!-- Action -->
-                       
-                        <p>If you did not make this purchase please contact <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
-                        <p>Thank you,
-                          <br>The Plancare PH team</p>
+                        <!-- (You may include additional details or action steps if needed) -->
+
+                        <p>If you have any further concerns or questions, please don't hesitate to contact us at <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
+                        <p>Thank you for choosing Plancare PH.
+                            <br>The Plancare PH team</p>
                         <!-- Sub copy -->
-                       
+                        <!-- (Any additional information or messages can be added here) -->
                       </div>
                     </td>
                   </tr>

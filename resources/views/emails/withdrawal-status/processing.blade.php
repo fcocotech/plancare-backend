@@ -457,16 +457,18 @@
                   <tr>
                     <td class="content-cell">
                       <div class="f-fallback">
-                        <h1>Payment Confirmation</h1>
+                        <h1>Withdrawal Processing</h1>
                         <p>Hi, {{$name}}</p>
-                        <p>Thank you for your payment. Here are the details of your payment:</p><br/>
-                        <p>Transaction No: {{$trans_no}}</p>
-                        <p>Amount Paid: {{$amount}}</p>
-                        <p>Product Name: {{$prod_name}}</p>
-                        <p></p>
+                        <p>This is to inform you that we have received your withdrawal request for <b>{{$tran_no}}</b>. Currently, the withdrawal is being processed, and we are working diligently to complete the transaction.</p>
+                        <p><b>Transaction Details</b></p>
+                        <p style="margin: 0;">Transaction No: <b>{{$trans_no}}</b></p>
+                        <p style="margin: 0;">Amount to Withdraw: <b>{{$amount_to_withdraw}}</b></p>
+                        <p style="margin: 0;">Less: Admin Fee <b>{{$admin_fee}}</b></p>
+                        <p><b>Total Amount to Receive: {{$amount_to_receive}}</b></p>
+                        <p>Withdrawal Method: <b>{{$withdrawal_method}}</b></p>
                         <!-- Action -->
                        
-                        <p>If you did not make this purchase please contact <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
+                        <p>If you did not make this withdrawal please contact <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
                         <p>Thank you,
                           <br>The Plancare PH team</p>
                         <!-- Sub copy -->
