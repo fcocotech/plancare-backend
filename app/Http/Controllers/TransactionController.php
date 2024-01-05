@@ -58,6 +58,7 @@ class TransactionController extends Controller
     }
 
     public function makePayment(Request $request) {
+        DB::beginTransaction();
         try {
             $user = Auth::user();
             $payment_for = User::find($request->id);//get the user info of the member
@@ -105,15 +106,17 @@ class TransactionController extends Controller
                     
                     //send email confirmation
                     // $this->sendPaymentConfirmationEmail($transaction->transaction_id,$payment_for,$product);
-
+                    DB::commit();
                     return response()->json(['status' => true, 'message' => "Payment Successful"]);
                 } else {
                     return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
                 }
             } else {
                 return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']);
+                
             }
         } catch(Exception $e) {
+            DB::rollback();
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
         }
     }
@@ -127,40 +130,40 @@ class TransactionController extends Controller
         });
     }
 
-    protected function commissionDistribution($from, $amount_paid) {
-        $datas = [];
-        $user = Auth::user();
-        $connectedNodes = UserCommission::where('commission_from', $from->id)->where('status', 'unreleased')->get();
-        foreach($connectedNodes as $key => $node) {
-            $commission = Commission::where('level', $node->commission_level)->first();
+    // protected function commissionDistribution($from, $amount_paid) {
+    //     $datas = [];
+    //     $user = Auth::user();
+    //     $connectedNodes = UserCommission::where('commission_from', $from->id)->where('status', 'unreleased')->get();
+    //     foreach($connectedNodes as $key => $node) {
+    //         $commission = Commission::where('level', $node->commission_level)->first();
 
-            $rate_percentage = $commission->rate / 100;
+    //         $rate_percentage = $commission->rate / 100;
 
-            $commission_amount = $amount_paid * $rate_percentage;
+    //         $commission_amount = $amount_paid * $rate_percentage;
 
-            $data = [
-                'user_id' => $node->user_id,
-                'amount' => $commission_amount,
-                'processed_by' => $user->id,
-                'payment_method' => 'Commissions',
-                'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
-                'description' => 'Received '.($commission->rate).'% commission from '.$from->name,
-                'status' => 1,
-                'proof_url' => '',
-                'commission_rate' => $commission->rate,
-                'commission_from' => $from->id
-            ];
+    //         $data = [
+    //             'user_id' => $node->user_id,
+    //             'amount' => $commission_amount,
+    //             'processed_by' => $user->id,
+    //             'payment_method' => 'Commissions',
+    //             'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
+    //             'description' => 'Received '.($commission->rate).'% commission from '.$from->name,
+    //             'status' => 1,
+    //             'proof_url' => '',
+    //             'commission_rate' => $commission->rate,
+    //             'commission_from' => $from->id
+    //         ];
 
-            $datas[] = $data;
-            $transaction = self::create($data);
-            if($transaction['status']) {
-                $user_commission = UserCommission::find($node->id);
-                $user_commission->status = 'released';
-                $user_commission->update();
-            }
-        }
-        return ['data' => $datas, 'nodes' => $connectedNodes];
-    }
+    //         $datas[] = $data;
+    //         $transaction = self::create($data);
+    //         if($transaction['status']) {
+    //             $user_commission = UserCommission::find($node->id);
+    //             $user_commission->status = 'released';
+    //             $user_commission->update();
+    //         }
+    //     }
+    //     return ['data' => $datas, 'nodes' => $connectedNodes];
+    // }
 
     // protected function APIcommissionDistribution(Requst $request) {
     //     $datas = [];
@@ -214,50 +217,58 @@ class TransactionController extends Controller
     // }
 
     protected function assignCommission($member,$comm_rate,$amt){
-        $user = Auth::user();
-        $parent = User::find($member->parent_referral);
-        if($parent->id==1){
-            return false;
-        }
-        if($parent!=null){
-            $commission = new UserCommission();
-            $transaction = new transaction();
-
-            $transaction = new Transaction;
-            $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
-            $transaction->description = "Commission distribution";
-            $transaction->payment_method = 0;
-            $transaction->amount = $amt * $comm_rate;
-            $transaction->proof_url = null;
-            $transaction->processed_by = $user->id;
-            $transaction->created_by=$user->id;
-            $transaction->user_id = $parent->id;
-            $transaction->trans_type = 2;//commission
-            $transaction->status = 1;
-            $transaction->commission_rate = $comm_rate;
-            $transaction->commission_from = $member->id;
-            
-            $transaction->save();
-
-            $commission->commission_level = 0;
-            $commission->user_id = $parent->id;
-            $commission->commission_from = $member->id;
-            $commission->status=1;
-            $commission->comm_rate = $comm_rate;
-            $commission->comm_amt = $comm_rate * $amt;
-            $commission->save();
-
-            if($comm_rate==0.3){
-                return $this->assignCommission($parent,0.1,$amt);
-            }else{
-                return $this->assignCommission($parent,$comm_rate/2,$amt);
+        DB::befginTransaction();
+        try{
+            $user = Auth::user();
+            $parent = User::find($member->parent_referral);
+            if($parent->id==1){
+                return false;
             }
-            
-            return true;
-        }else{
+            if($parent!=null){
+                
+
+                $commission = new UserCommission();
+                $transaction = new transaction();
+
+                $transaction = new Transaction;
+                $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
+                $transaction->description = "Commission distribution";
+                $transaction->payment_method = 0;
+                $transaction->amount = $amt * $comm_rate;
+                $transaction->proof_url = null;
+                $transaction->processed_by = $user->id;
+                $transaction->created_by=$user->id;
+                $transaction->user_id = $parent->id;
+                $transaction->trans_type = 2;//commission
+                $transaction->status = 1;
+                $transaction->commission_rate = $comm_rate;
+                $transaction->commission_from = $member->id;
+                
+                $transaction->save();
+
+                $commission->commission_level = 0;
+                $commission->user_id = $parent->id;
+                $commission->commission_from = $member->id;
+                $commission->status=1;
+                $commission->comm_rate = $comm_rate;
+                $commission->comm_amt = $comm_rate * $amt;
+                $commission->save();
+                DB::commit();
+
+                if($comm_rate==0.3){
+                    return $this->assignCommission($parent,0.1,$amt);
+                }else{
+                    return $this->assignCommission($parent,$comm_rate/2,$amt);
+                }
+                
+                return true;
+            }else{
+                return false;
+            }
+        }catch(\Exception $e){
+            DB::rollback();
             return false;
         }
-
         // return true;
         
     }
