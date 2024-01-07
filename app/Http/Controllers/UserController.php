@@ -32,7 +32,7 @@ class UserController extends Controller
 
     public function get(Request $request) {
 
-        $users = array("profile"=>User::select('users.id','users.name','users.email','users.referral_code','users.status')
+        $users = array("profile"=>User::select('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code as referredby')
         ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
         ->selectRaw('(SELECT p.name FROM product_purchases pp
                         LEFT JOIN products p ON pp.product_id = p.id
@@ -47,18 +47,20 @@ class UserController extends Controller
         ->selectRaw('(SELECT pp.id FROM product_purchases pp
                         WHERE pp.purchased_by = users.id
                     ) as product_purchase_id')
+        // ->selectRaw('(SELECT r.referral_code FROM users r WHERE r.id = users.parent_referral) sa referred_by')
+        ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
         ->leftJoin('transactions as tr', function ($join) {
             $join->on('tr.user_id', '=', 'users.id')
-                ->where('tr.payment_method', 'Commissions');
+                ->where('tr.trans_type', '2');
         })
         ->where('users.is_admin', '!=', 1));
 
-        if ($request->filter!=0) {
+        if ($request->filter!=null) {
            $users["profile"]->where('users.status', $request->filter);//gets all active user
               
         }
 
-        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status')->get();
+        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code')->get();
 
         return response()->json(['status' => true, 'users' => $users["profile"], 'params' => $request->filter]);
     }
@@ -82,7 +84,7 @@ class UserController extends Controller
                     ) as product_purchase_id')
         ->leftJoin('transactions as tr', function ($join) {
             $join->on('tr.user_id', '=', 'users.id')
-                ->where('tr.payment_method', 'Commissions');
+                ->where('tr.trans_type', '2');
         })
         ->where('users.is_admin', '!=', 1);
 
@@ -96,27 +98,27 @@ class UserController extends Controller
         return response()->json(['status' => true, 'users' => $users, 'params' => $request->filter]);
     }
 
-    public function getRateAndLevel(Request $request, $referrerUserId) {
-        // Get the referrer's referrer (parent)
-        $parentReferrer = Referral::where('referred_user_id', $referrerUserId)->first();
+    // public function getRateAndLevel(Request $request, $referrerUserId) {
+    //     // Get the referrer's referrer (parent)
+    //     $parentReferrer = Referral::where('referred_user_id', $referrerUserId)->first();
     
-        // If there is no referrer or reached the root (ADMIN), return the rate_id and current level as 1
-        if (!$parentReferrer) {
-            $rateId = Commission::where('level', 1)->value('id');
-            return ['rate_id' => $rateId, 'level' => 1];
-        }
+    //     // If there is no referrer or reached the root (ADMIN), return the rate_id and current level as 1
+    //     if (!$parentReferrer) {
+    //         $rateId = Commission::where('level', 1)->value('id');
+    //         return ['rate_id' => $rateId, 'level' => 1];
+    //     }
     
-        // Recursively traverse up the referral levels
-        $parentResult = getRateAndLevel($parentReferrer->referrer_user_id);
+    //     // Recursively traverse up the referral levels
+    //     $parentResult = getRateAndLevel($parentReferrer->referrer_user_id);
     
-        // Increment the level as we move down the recursion
-        $currentLevel = $parentResult['level'] + 1;
+    //     // Increment the level as we move down the recursion
+    //     $currentLevel = $parentResult['level'] + 1;
     
-        // Get the rate_id for the current level
-        $rateId = Commission::where('level', $currentLevel)->value('id');
+    //     // Get the rate_id for the current level
+    //     $rateId = Commission::where('level', $currentLevel)->value('id');
     
-        return response()->json(['rate_id' => $rateId, 'level' => $currentLevel]);
-    }    
+    //     return response()->json(['rate_id' => $rateId, 'level' => $currentLevel]);
+    // }    
 
     
 
@@ -133,32 +135,27 @@ class UserController extends Controller
         
         $product_id = 1;
         $parent_id = 0;
-        if($request->referral_code==null)
-            $request->referral_code='1001';//assign to admin
+        if($request->referral_code==null){
+            $request->referral_code='10011';//assign to admin
+        }
+
         $referrerUser = User::where('referral_code',$request->referral_code)->first();
         
-            
-        // if($request->has('referral_code')){
-        //     $parts = explode('-', $request->referral_code);
-
-        //     $product_id = 1;//(int)$parts[0];
-        //     $parent_id = (int)$parts[1];
-        //     $user_id = (int)$parts[2];
-        // }        
-
-        // referral Valid
-        // $referrerUser =  $user_id;
-        // if($user_id != null)
-        //     $referrerUser = User::where('id', $user_id->id)->first();
-        
-        //check if referral code is already assigned to 4 slots
-        if($this->findChildCount($referrerUser->id)>4){
+        if($referrerUser==null){
             return response()->json([
                 'status' => false,
-                'message' => 'Referral code is invalid. Slot is already full. Pls use another code',
+                'message' => 'We cannot find this referral code. Pls use another code',
             ]);
-        }  
-    
+        }
+        //check if referral code is already assigned to 4 slots
+        if($referrerUser->id!='1'){
+            if($this->findChildCount($referrerUser->id)>=4){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Slot is already full. Pls use another code',
+                ]);
+            }  
+        }
 
         if(!$referrerUser){
             return response()->json([
@@ -179,20 +176,21 @@ class UserController extends Controller
         }
 
         $user = new User;
-        $user->address          = $request->address;
-        $user->birthdate        = $request->birthdate;
-        $user->city             = $request->city;
-        $user->zipcode          = $request->zipcode;
+        $user->address = $request->address;
+        $user->birthdate = $request->birthdate;
+        $user->city = $request->city;
+        $user->zipcode = $request->zipcode;
         $user->email            = $request->email;
         $user->idtype           = $request->idtype;
         $user->mobile_number    = $request->mobile_number;
         $user->name             = $request->name;
         $user->nationality      = $request->nationality;
+        $user->sec_q1           = $request->sec_q1;
         $user->sec_q1_ans       = $request->sec_q1_ans;
+        $user->sec_q2           = $request->sec_q2;
         $user->sec_q2_ans       = $request->sec_q2_ans;
+        $user->sec_q3           = $request->sec_q3;
         $user->sec_q3_ans       = $request->sec_q3_ans;
-        $user->sec_q4_ans       = $request->sec_q4_ans;
-        $user->sec_q5_ans       = $request->sec_q5_ans;
         $user->parent_referral    = $referrerUser->id;//$referrerUser->referral_code;//assign parent referral code
         $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
         $user->status           = 2;//assign as pending
@@ -267,15 +265,20 @@ class UserController extends Controller
         
     }
 
-    public function findChildCount($parentid){
-        return User::where('parent_referral',$parentid)->where('status',1)->count();
-    }
+    // public function findChildCount($parentid){
+    //     return User::where('parent_referral',$parentid)->where('status',1)->count();
+    // }
     public function apifindChildCount(Request $request){
-        $usercount=User::where('parent_referral',$request->id)->where('status',1)->count();
-        return response()->json(['status' => true, 'usercount' => $usercount]);
+        try{
+            $usercount=User::where('parent_referral',$request->id)->where('status',1)->count();
+            return response()->json(['status' => true, 'usercount' => $usercount]);
+        }catch(Exception $e){
+            return response()->json(['status' => false, 'message' => $e->message]);
+        }
+        
          
     }
-    public function generateReferralCode($userid,$prodid,$parentid){
+    protected function generateReferralCode($userid,$prodid,$parentid){
         $strparentid;
         if($parentid<1){
             $parentid="000";
@@ -288,19 +291,19 @@ class UserController extends Controller
 
         return $prodid . $parentid . $userid;
     }
-    public function ApigenerateReferralCode(Request $request){
-        $strparentid;
-        if($request->parentid<1){
-            $request->parentid="000";
-        }
-        elseif($request->parentid<10){
-            $request->parentid="00" . $request->parentid;
-        }elseif($request->parentid<100){
-            $request->parentid="0" . $request->parentid;
-        }
+    // public function ApigenerateReferralCode(Request $request){
+    //     $strparentid;
+    //     if($request->parentid<1){
+    //         $request->parentid="000";
+    //     }
+    //     elseif($request->parentid<10){
+    //         $request->parentid="00" . $request->parentid;
+    //     }elseif($request->parentid<100){
+    //         $request->parentid="0" . $request->parentid;
+    //     }
 
-        return $request->prodid . $request->parentid . $request->userid;
-    }
+    //     return $request->prodid . $request->parentid . $request->userid;
+    // }
     // public function assignReferrer(User $newUser, $initialReferrerCode = null, $initialReferrerId = 0, $depth = 1) {
     //     $checker = "";
     //     $referrals = null;
@@ -360,31 +363,31 @@ class UserController extends Controller
     //     array_push($this->debugger, ['referrer' => $referrer, 'newReferrerCode' => $newReferrerCode, 'depth' => $depth]);
     // }
 
-    protected function getReferrerNodeCount($initialReferrerCode) {
-        return User::where('reference_code', $initialReferrerCode)->whereRaw('(SELECT COUNT(*) FROM users AS u WHERE `u`.`referral_code` = "'.$initialReferrerCode.'" AND u.deleted_at IS NULL) < 4')
-        ->first();
-    }
+    // protected function getReferrerNodeCount($initialReferrerCode) {
+    //     return User::where('reference_code', $initialReferrerCode)->whereRaw('(SELECT COUNT(*) FROM users AS u WHERE `u`.`referral_code` = "'.$initialReferrerCode.'" AND u.deleted_at IS NULL) < 4')
+    //     ->first();
+    // }
 
-    protected function calculateCommissions($referral_code, $commission_from, $depth = 1) {
-        if ($depth >= 16) {
-            return 'recursion exceeds limit!'; // exit recursion if depth exceeds the limit
-        }
+    // protected function calculateCommissions($referral_code, $commission_from, $depth = 1) {
+    //     if ($depth >= 16) {
+    //         return 'recursion exceeds limit!'; // exit recursion if depth exceeds the limit
+    //     }
 
-        $user = User::where('referral_code', $referral_code)->whereNull('deleted_at')->first();
-        $this->saveUserCommission($user, $depth, $commission_from);
-        $referral_code = $user->referral_code;
-        if(isset($user->referral_code)){
-            $this->calculateCommissions($referral_code, $id, $depth + 1);
-        }
-    }
+    //     $user = User::where('referral_code', $referral_code)->whereNull('deleted_at')->first();
+    //     $this->saveUserCommission($user, $depth, $commission_from);
+    //     $referral_code = $user->referral_code;
+    //     if(isset($user->referral_code)){
+    //         $this->calculateCommissions($referral_code, $id, $depth + 1);
+    //     }
+    // }
 
-    protected function saveUserCommission(User $user, $commission_level, $commission_from) {
-        $user_commission = new UserCommission;
-        $user_commission->commission_level = $commission_level;
-        $user_commission->commission_from = $commission_from;
-        $user_commission->user_id = $user->id;
-        $user_commission->save();
-    }
+    // protected function saveUserCommission(User $user, $commission_level, $commission_from) {
+    //     $user_commission = new UserCommission;
+    //     $user_commission->commission_level = $commission_level;
+    //     $user_commission->commission_from = $commission_from;
+    //     $user_commission->user_id = $user->id;
+    //     $user_commission->save();
+    // }
     
     public function sendEmailVerification($user) {
         $token = Str::random(32).$user->id;
@@ -543,9 +546,11 @@ class UserController extends Controller
     }
 
     public function getId(Request $request, $id) {
-        $user = User::select(
-            'name','email','birthdate','nationality','address','city','zipcode','mobile_number','referral_code','profile_url','status'
-        )->where('id', $id)->first();
+        $user = array("user"=>User::select(
+            'name','email','birthdate','nationality','address','city','zipcode','mobile_number','referral_code','profile_url','status','parent_referral'
+        )->where('id', $id)->first(),"parent"=>null);
+        
+        $user["parent"]= User::where('id',$user["user"]->parent_referral)->first();;
         return response()->json(['status' => true, 'user' => $user]);
     }
 }

@@ -74,61 +74,72 @@ class TransactionController extends Controller
         DB::beginTransaction();
         try {
             
-            $user = Auth::user();
-            $payment_for = User::find($request->id);//get the user info of the member
-
-            if($payment_for) {
-                $data = [
-                    'user_id' => $request->id,
-                    'amount' => $request->amount,
-                    'type'=>$request->trans_type,
-                    'processed_by' => $user->id,
-                    'payment_method' => $request->payment_method,
-                    'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
-                    'description' => $request->description,
-                    'parent_referral'=>$payment_for->parent_referral,
-                    'status' => 1,
-                    'proof_url' => null
-                ];
-
-                if($request->has('proof_of_payment') && $request->proof_of_payment != ''){
-                    $proof_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->proof_of_payment));
-                    $proof_path = storage_path('app/public/images/proof/');
-                    if(!File::isDirectory($proof_path)){
-                        File::makeDirectory($proof_path, 0777, true, true);
-                    }
-                    $proof_name = time().'_'.$user->id.'_proof.png';
-                    file_put_contents($proof_path.$proof_name, $proof_image);
-                    $data['proof_url'] = env('APP_URL', '') . '/storage/images/proof/'.$proof_name;
+            if($request->proof_of_payment==null){
+                return response()->json(['status' => false,'message' => "Must have a valid proof of payment"]); 
+            }else{
+                $user = Auth::user();
+                $payment_for = User::find($request->id);//get the user info of the member
+                //double check for member count
+                if($this->findChildCount($payment_for->parent_referral)>=4){
+                    return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
                 }
 
-                $transaction = self::create($data);
-                if($transaction['status']) {
-                    $payment_for->status = 1;
-                    $payment_for->update();
+                if($payment_for) {
+                    $data = [
+                        'user_id' => $request->id,
+                        'amount' => $request->amount,
+                        'type'=>$request->trans_type,
+                        'processed_by' => $user->id,
+                        'payment_method' => $request->payment_method,
+                        'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
+                        'description' => $request->description,
+                        'parent_referral'=>$payment_for->parent_referral,
+                        'status' => 1,
+                        'proof_url' => $request->proof_of_payment
+                    ];
 
-                    $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
-                    $product = Product::where('id',$productPurchase->product_id)->first();;
-                    if($productPurchase){
-                        $productPurchase->status = '1';
-                        $productPurchase->update();
+                    if($request->has('proof_of_payment') && $request->proof_of_payment != ''){
+                        $proof_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->proof_of_payment));
+                        $proof_path = storage_path('app/public/images/proof/');
+                        if(!File::isDirectory($proof_path)){
+                            File::makeDirectory($proof_path, 0777, true, true);
+                        }
+                        $proof_name = time().'_'.$user->id.'_proof.png';
+                        file_put_contents($proof_path.$proof_name, $proof_image);
+                        $data['proof_url'] = env('APP_URL', '') . '/storage/images/proof/'.$proof_name;
+                    }
+
+                    $transaction = self::create($data);
+                    if($transaction['status']) {
+                        $payment_for->status = 1;
+                        $payment_for->update();
+
+                        $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
+                        $product = Product::where('id',$productPurchase->product_id)->first();;
+                        if($productPurchase){
+                            $productPurchase->status = '1';
+                            $productPurchase->update();
+                        }
+                        
+                        // commission distribution
+                        DB::commit();
+                        $this->assignCommission($payment_for,0.3,$request->amount);
+                        
+                        //send email confirmation
+                        $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
+                    
+                        return response()->json(['status' => true,'object'=>$product, 'message' => "Payment Successful"]);
+                    } else {
+                        return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
                     }
                     
-                    // commission distribution
-                    DB::commit();
-                    $this->assignCommission($payment_for,0.3,$request->amount);
-                    
-                    //send email confirmation
-                    $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
-                   
-                    return response()->json(['status' => true,'object'=>$product, 'message' => "Payment Successful"]);
                 } else {
-                    return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
+                    return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']);
+                    
                 }
-            } else {
-                return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']);
-                
+
             }
+            
         } catch(Exception $e) {
             DB::rollback();
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
