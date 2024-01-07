@@ -132,7 +132,7 @@ class UsersTableSeeder extends Seeder
                 'status' => 1,
                 'role_id'=>2,
                 'reference_code'=>'0',
-                'referral_code' => '100110',
+                'referral_code' => '100111',
                 'parent_referral'=>'1'
             ]
         ];
