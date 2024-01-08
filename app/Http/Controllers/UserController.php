@@ -32,8 +32,8 @@ class UserController extends Controller
 
     public function checkCurrentPassword(Request $request){
         $user = Auth::user();
-        $current_pass=Hash::make($request->password);
-        if($user->password==$current_pass){
+        $inputPassword = $request->password;
+        if(Hash::check($inputPassword, $user->password)){
             return response()->json([
                 'status' => true,
                 'message' => "Current password",
@@ -44,8 +44,8 @@ class UserController extends Controller
                 'message' => "Wrong current password",
             ]);
         }
-
     }
+
     public function get(Request $request) {
 
         $users = array("profile"=>User::select('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code as referredby')
