@@ -30,6 +30,22 @@ class UserController extends Controller
         ]);
     }
 
+    public function checkCurrentPassword(Request $request){
+        $user = Auth::user();
+        $current_pass=Hash::make($request->password);
+        if($user->password==$current_pass){
+            return response()->json([
+                'status' => true,
+                'message' => "Current password",
+            ]);
+        }else{
+            return response()->json([
+                'status' => false,
+                'message' => "Wrong current password",
+            ]);
+        }
+
+    }
     public function get(Request $request) {
 
         $users = array("profile"=>User::select('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code as referredby')
@@ -503,6 +519,21 @@ class UserController extends Controller
         
 
         return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
+    }
+
+    protected function getInnerMembers($parentid,$index){
+
+        $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $parentid)->where('status', '1')->get();
+
+        if($members!=null){
+            foreach($members as $mem){
+                $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
+                $mem->myteam=$member_child;
+            }
+            // getInnerMembers($)
+        }
+
+        return $members;
     }
 
     public function team(Request $request, $user_id){        
