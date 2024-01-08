@@ -465,7 +465,7 @@
                         <p>Product Name: {{$prod_name}}</p>
                         <p></p>
                         <!-- Action -->
-                       
+                        
                         <p>If you did not make this purchase please contact <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
                         <p>Thank you,
                           <br>The Plancare PH team</p>

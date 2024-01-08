@@ -467,7 +467,7 @@
                         <p><b>Total Amount to Receive: {{$amount_to_receive}}</b></p>
                         <p>Withdrawal Method: <b>{{$withdrawal_method}}</b></p>
                         <!-- Action -->
-                       
+                        <p>Please be advised that the processing will take 3-5 business days.</p>
                         <p>If you did not make this withdrawal please contact <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
                         <p>Thank you,
                           <br>The Plancare PH team</p>

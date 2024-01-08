@@ -37,8 +37,8 @@ class AuthController extends Controller
 
             $login_user = User::select('users.*', 'u.id as parent_id')
             ->leftJoin('users as u', function ($join) use ($user) {
-                $join->on('u.reference_code', '=', \DB::raw("'" . $user->referral_code . "'"))
-                    ->orWhereNull('u.reference_code');
+                $join->on('u.id', '=', \DB::raw("'" . $user->parent_referral . "'"))
+                    ->orWhereNull('u.parent_referral');
             })
             ->where('users.id', $user->id)
             ->whereNull('users.deleted_at')

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('mobile_number')->nullable();
             $table->string('idtype')->nullable();
             $table->string('idurl')->nullable();
-            $table->string('referral_code')->nullable();
+            $table->string('referral_code')->unique();
             $table->string('profile_url')->nullable();
             $table->integer('is_admin')->nullable()->default(0);
             $table->json('security_answers')->nullable();
