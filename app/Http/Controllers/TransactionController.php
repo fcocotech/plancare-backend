@@ -16,7 +16,7 @@ class TransactionController extends Controller
     public function get() {
         $user = Auth::user();
 
-        $transactions = Transaction::where('user_id', $user->id)->orWhere('processed_by', $user->id)->get();
+        $transactions = Transaction::with(["user","processed_by"])->where('user_id', $user->id)->orWhere('processed_by', $user->id)->get();
         return response()->json([
             'status' => true,
             'transactions' => $transactions,
@@ -28,12 +28,13 @@ class TransactionController extends Controller
 
         $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->get();
         // $earnings = UserCommission::where('user_id', $user->id)->get();
-        // $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->get();
+        $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->get();
         $total_earnings = $earnings->sum('amount');
         return response()->json([
             'status' => true,
             'earnings' => $earnings,
-            'total_earnings' => $total_earnings
+            'total_earnings' => $total_earnings,
+            'total_withdrawable'=>$withdrawable->sum('amount')
         ]);
     }
 
@@ -197,14 +198,22 @@ class TransactionController extends Controller
                 
                 $transaction->save();
 
+
                 $commission->commission_level = 0;
                 $commission->user_id = $parent->id;
                 $commission->commission_from = $member->id;
                 $commission->status=1;
-                $commission->comm_rate = $comm_rate;
+                $commission->comm_rate = $comm_rate; 
                 $commission->comm_amt = $comm_rate * $amt;
                 $commission->save();
                
+                //recursive function to crawl to members.
+                if($comm_rate==0.3){
+                    return $this->assignCommission($parent,0.1,$amt);
+                }else{
+                    return $this->assignCommission($parent,$comm_rate/2,$amt);
+                }
+                
                 
                 //check if parent has 3 members
 
@@ -215,22 +224,11 @@ class TransactionController extends Controller
                     $members = User::where('parent_referral',$parent->id)->get();
 
                     foreach($members as $mem){
-                        $clear_comm = UserCommission::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                        UserCommission::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                        Transactions::where('user_id',$parent->id)->where('commission_from',$member->id)->where('cleared',0)->update(['cleared'=>1]);
                     }
-                    // $clear_trans = Transactions::where('user_id',$parent->id)->where('commission_from',$member->id)->get();
-                    // $transaction->cleared=1;
-                    // $transaction->update();
-                    
-                    // $commission->cleared=1;
-                    // $commission->update();
                 }
                 DB::commit();
-                //recursive function to crawl to members.
-                if($comm_rate==0.3){
-                    return $this->assignCommission($parent,0.1,$amt);
-                }else{
-                    return $this->assignCommission($parent,$comm_rate/2,$amt);
-                }
                 
                 return true;
             }else{
