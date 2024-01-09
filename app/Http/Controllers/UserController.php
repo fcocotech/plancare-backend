@@ -537,8 +537,8 @@ class UserController extends Controller
     }
 
     public function team(Request $request, $user_id){        
-        $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('id', $user_id)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $leader->id)->where('status', '1')->get();
+        $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared')->where('id', $user_id)->first();
+        $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared')->where('parent_referral', $leader->id)->where('status', '1')->get();
         
         $leader->members = $members;
         return response()->json(['status' => true, 'team' => $leader]);

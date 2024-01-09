@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('Users', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             //
             $table->integer('cleared')->default(0);
         });
@@ -22,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('Users', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             //
         });
     }
