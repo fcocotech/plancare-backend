@@ -27,6 +27,7 @@ class TransactionController extends Controller
         $user = Auth::user();
 
         $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->get();
+        // $earnings = UserCommission::where('user_id', $user->id)->get();
         // $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->get();
         $total_earnings = $earnings->sum('amount');
         return response()->json([
@@ -93,7 +94,7 @@ class TransactionController extends Controller
                     $data = [
                         'user_id' => $request->id,
                         'amount' => $request->amount,
-                        'type'=>$request->trans_type,
+                        'type'=>1,//$request->trans_type, Package Payment
                         'processed_by' => $user->id,
                         'payment_method' => $request->payment_method,
                         'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
@@ -132,7 +133,7 @@ class TransactionController extends Controller
                         
                         //send email confirmation
                         $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
-                    
+                        
                         return response()->json(['status' => true,'object'=>$product, 'message' => "Payment Successful"]);
                     } else {
                         return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
@@ -165,92 +166,6 @@ class TransactionController extends Controller
             throw $e;
         }
     }
-
-    // protected function commissionDistribution($from, $amount_paid) {
-    //     $datas = [];
-    //     $user = Auth::user();
-    //     $connectedNodes = UserCommission::where('commission_from', $from->id)->where('status', 'unreleased')->get();
-    //     foreach($connectedNodes as $key => $node) {
-    //         $commission = Commission::where('level', $node->commission_level)->first();
-
-    //         $rate_percentage = $commission->rate / 100;
-
-    //         $commission_amount = $amount_paid * $rate_percentage;
-
-    //         $data = [
-    //             'user_id' => $node->user_id,
-    //             'amount' => $commission_amount,
-    //             'processed_by' => $user->id,
-    //             'payment_method' => 'Commissions',
-    //             'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
-    //             'description' => 'Received '.($commission->rate).'% commission from '.$from->name,
-    //             'status' => 1,
-    //             'proof_url' => '',
-    //             'commission_rate' => $commission->rate,
-    //             'commission_from' => $from->id
-    //         ];
-
-    //         $datas[] = $data;
-    //         $transaction = self::create($data);
-    //         if($transaction['status']) {
-    //             $user_commission = UserCommission::find($node->id);
-    //             $user_commission->status = 'released';
-    //             $user_commission->update();
-    //         }
-    //     }
-    //     return ['data' => $datas, 'nodes' => $connectedNodes];
-    // }
-
-    // protected function APIcommissionDistribution(Requst $request) {
-    //     $datas = [];
-    //     $user = Auth::user();
-    //     $connectedNodes = UserCommission::where('commission_from', $request->id)->where('status', 'unreleased')->get();
-    //     foreach($connectedNodes as $key => $node) {
-    //         $commission = Commission::where('level', $node->commission_level)->first();
-
-    //         $rate_percentage = $commission->rate / 100;
-
-    //         $commission_amount = $request->amount * $rate_percentage;
-
-    //         $data = [
-    //             'user_id' => $node->user_id,
-    //             'amount' => $commission_amount,
-    //             'processed_by' => $user->id,
-    //             'payment_method' => 6,
-    //             'trans_type'=>2,//commissions
-    //             'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
-    //             'description' => 'Received '.($commission->rate).'% commission from '.$request->name,
-    //             'status' => 1,
-    //             'proof_url' => '',
-    //             'commission_rate' => $commission->rate,
-    //             'commission_from' => $request->id
-    //         ];
-
-    //         $datas[] = $data;
-    //         $transaction = self::create($data);
-    //         if($transaction['status']) {
-    //             $user_commission = UserCommission::find($node->id);
-    //             $user_commission->status = 1;
-    //             $user_commission->update();
-    //         }
-    //     }
-    //     return ['data' => $datas, 'nodes' => $connectedNodes];
-    // }
-
-    // public function APIcommissionDistribution2(Request $request) {
-    //     // $datas = [];
-    //     try{
-    //         $user = Auth::user();
-    //         $member =  User::find($request->id);
-                       
-    //         // $parent = User::where('parent_referral',$member->parent_referral);
-    //         $this->assignCommission($member,$request->rate,$request->amt);
-
-    //         return response()->json(['status' => true, 'message' => 'Success']);
-    //     }catch(Exception $e){
-    //         return response()->json(['status' => false, 'message' => $e->getMessage()]);
-    //     }
-    // }
 
     protected function assignCommission($member,$comm_rate,$amt){
         DB::beginTransaction();
@@ -289,8 +204,28 @@ class TransactionController extends Controller
                 $commission->comm_rate = $comm_rate;
                 $commission->comm_amt = $comm_rate * $amt;
                 $commission->save();
-                DB::commit();
+               
+                
+                //check if parent has 3 members
 
+                if($this->findChildCount($parent->id)>=3){
+                    $parent->cleared =1;
+                    $parent->update();
+
+                    $members = User::where('parent_referral',$parent->id)->get();
+
+                    foreach($members as $mem){
+                        $clear_comm = UserCommission::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                    }
+                    // $clear_trans = Transactions::where('user_id',$parent->id)->where('commission_from',$member->id)->get();
+                    // $transaction->cleared=1;
+                    // $transaction->update();
+                    
+                    // $commission->cleared=1;
+                    // $commission->update();
+                }
+                DB::commit();
+                //recursive function to crawl to members.
                 if($comm_rate==0.3){
                     return $this->assignCommission($parent,0.1,$amt);
                 }else{
