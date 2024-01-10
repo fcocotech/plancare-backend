@@ -217,7 +217,7 @@ class TransactionController extends Controller
 
                     foreach($members as $mem){
                         UserCommission::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
-                        Transactions::where('user_id',$parent->id)->where('commission_from',$member->id)->where('cleared',0)->update(['cleared'=>1]);
+                        Transactions::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                     }
                 }
                 
