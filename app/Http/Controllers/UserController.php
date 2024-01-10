@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\{User, Referral, Commission, UserCommission, Product, ProductPurchase};
+use App\Models\{User, Referral, Commission, UserCommission, Product, ProductPurchase,Transaction};
 use Illuminate\Support\Facades\{File, Hash};
-use DB;
+// use DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 
 class UserController extends Controller
@@ -18,7 +19,7 @@ class UserController extends Controller
 
     public function getCardData(Request $request) {
         $sql = "SELECT 
-                    (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0) as total_users,
+                    (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status !='3') as total_users,
                     (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '2') as pending_users,
                     (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '1') as total_active
                 FROM users u LIMIT 1
@@ -47,8 +48,7 @@ class UserController extends Controller
     }
 
     public function get(Request $request) {
-
-        $users = array("profile"=>User::select('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code as referredby')
+        $users = array("profile"=>User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code as referredby','users.cleared')
         ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
         ->selectRaw('(SELECT p.name FROM product_purchases pp
                         LEFT JOIN products p ON pp.product_id = p.id
@@ -73,10 +73,9 @@ class UserController extends Controller
 
         if ($request->filter!=null) {
            $users["profile"]->where('users.status', $request->filter);//gets all active user
-              
         }
 
-        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code')->get();
+        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code','users.cleared')->get();
 
         return response()->json(['status' => true, 'users' => $users["profile"], 'params' => $request->filter]);
     }
@@ -104,9 +103,10 @@ class UserController extends Controller
         })
         ->where('users.is_admin', '!=', 1);
 
-        if ($request->filter!=0) {
+        if ($request->filter!=0 || $request->filter!=null) {
            $users->where('users.status', $request->filter);//gets all active user
-              
+        }else{
+            $users->where('users.status','!=',3);
         }
 
         $users= $users->groupBy('users.id','users.name','users.email','users.referral_code','users.status')->get()->members;
@@ -249,36 +249,7 @@ class UserController extends Controller
         $this->sendWelcomeEmail($user);
         
         return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase,'debugger' => $this->debugger]);
-        //find all child of parentID/Referrer code
-
-        // $saveuser=false;
-        // if($this->findChildCount($referrerUser->id)<5){
-        //     if($this->findChildCount($referrerUser->id)<4){
-        //         $saveuser=true;
-        //     }else{
-        //         //ask user if they want to save it as 4th node or to a new parent
-        //     }
-        // }
-        // if($saveuser){
-        //     $user->save();
-        //     if($referrerUser){
-        //         $productPurchase = new ProductPurchase;
-        //         $productPurchase->product_id    = $product_id; //for now just 1 product
-        //         $productPurchase->purchased_by  = $user->id;
-        //         $productPurchase->referrer_id   = $referrerUser->id ?? 0;
-        
-        //         $productPurchase->save();
-        //     }
-        //     //send email verification after registration
-        //     $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
-        //     $user->update();
-        //     $this->sendEmailVerification($user);
-        //     $this->sendWelcomeEmail($user);
-        //     return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase,'debugger' => $this->debugger]);
-        // }else{
-        //     return response()->json(['status' => false, 'user' => $user, 'debugger' => $this->debugger]);
-        // }
-        
+       
     }
 
     // public function findChildCount($parentid){
@@ -425,10 +396,20 @@ class UserController extends Controller
     }
 
     public function updateUserStatus(Request $request){
-        $user = User::where('id', $request->id)->first();
-        $user->status= 3;
-        $user->delete();
-        return response()->json(['status' => true, 'user' => $user]);
+        DB::beginTransaction();
+        try{
+            $user = User::where('id', $request->id)->update(["status"=>3]);
+            // $user->status= 3;//account deactivated
+
+            Transaction::where('user_id',$request->id)->delete();
+            // $user->delete();
+            DB::commit();
+            return response()->json(['status' => true, 'user' => $user]);
+        }catch(Exception $e){
+            DB::rollback();
+            return response()->json(['status' => false, 'user' => null]);
+        }
+        
     }
     public function update(Request $request, $user_id) {
         try{
@@ -538,8 +519,8 @@ class UserController extends Controller
     }
 
     public function team(Request $request, $user_id){        
-        $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('id', $user_id)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $leader->id)->where('status', '1')->get();
+        $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared')->where('id', $user_id)->first();
+        $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared')->where('parent_referral', $leader->id)->where('status', '1')->get();
         
         $leader->members = $members;
         return response()->json(['status' => true, 'team' => $leader]);
