@@ -210,7 +210,7 @@ class TransactionController extends Controller
                 $commission->comm_rate = $comm_rate;
                 $commission->comm_amt = $comm_rate * $amt;
                 $commission->save();
-
+                 //check if parent has 3 members
                 if($this->findChildCount($parent->id)>=3){
                    
                     $members = User::where('parent_referral',$parent->id)->get();
@@ -228,11 +228,6 @@ class TransactionController extends Controller
                 }else{
                     return $this->assignCommission($parent,$comm_rate/2,$amt);
                 }
-                //check if parent has 3 members
-
-                
-                
-                
                 return true;
             }else{
                 return false;
