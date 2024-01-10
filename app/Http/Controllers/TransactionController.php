@@ -215,7 +215,8 @@ class TransactionController extends Controller
                     $members = User::where('parent_referral',$parent->id)->get();
 
                     foreach($members as $mem){
-                        $clear_comm = UserCommission::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                        UserCommission::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                        Transactions::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                     }
                     // $clear_trans = Transactions::where('user_id',$parent->id)->where('commission_from',$member->id)->get();
                     // $transaction->cleared=1;

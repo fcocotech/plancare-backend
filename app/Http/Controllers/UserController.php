@@ -286,7 +286,8 @@ class UserController extends Controller
     // }
     public function apifindChildCount(Request $request){
         try{
-            $usercount=User::where('parent_referral',$request->id)->where('status',1)->count();
+            $parent = User::where('referral_code',$request->referral_code)->first();
+            $usercount=User::where('parent_referral',$parent->id)->where('status',1)->count();
             return response()->json(['status' => true, 'usercount' => $usercount]);
         }catch(Exception $e){
             return response()->json(['status' => false, 'message' => $e->message]);
