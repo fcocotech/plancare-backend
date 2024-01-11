@@ -28,7 +28,7 @@ class TransactionController extends Controller
 
         $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->get();
         // $earnings = UserCommission::where('user_id', $user->id)->get();
-        $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->get();
+        $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
         $total_earnings = $earnings->sum('amount');
         return response()->json([
             'status' => true,
@@ -87,11 +87,9 @@ class TransactionController extends Controller
                 if($this->findChildCount($payment_for->parent_referral)>=4){
                     return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
                 }
-                // elseif($this->findChildCount($payment_for->parent_referral)>=3){
-
-                // }
-
+               
                 if($payment_for) {
+                    //add transaction for package payment
                     $data = [
                         'user_id' => $request->id,
                         'amount' => $request->amount,
@@ -240,9 +238,10 @@ class TransactionController extends Controller
                 foreach($members as $mem){
                     UserCommission::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                     Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                    DB::commit();
                 }
             }
-            DB::commit();
+            
             return true;
         }catch(Exception $e){
             DB::rollback();
