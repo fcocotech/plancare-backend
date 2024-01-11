@@ -229,17 +229,17 @@ class TransactionController extends Controller
         }
     }
 
-    public function clearTransactions($userid){
+    public function clearTransactions($parentid){
         DB::beginTransaction();
         try{
 
-            if($this->findChildCount($parent->id)>=3){
+            if($this->findChildCount($parentid)>=3){
                    
-                $members = User::where('parent_referral',$parent->id)->get();
+                $members = User::where('parent_referral',$parentid)->get();
     
                 foreach($members as $mem){
-                    UserCommission::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
-                    Transactions::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                    UserCommission::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                    Transactions::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                 }
             }
             DB::commit();
@@ -249,5 +249,9 @@ class TransactionController extends Controller
             return false;
         }
         
+    }
+
+    public function checkWithdrawableAmount($parentid){
+        $members = User::where('parent_referral',$parentid)->get();
     }
 }
