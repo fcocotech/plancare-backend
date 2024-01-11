@@ -139,6 +139,7 @@ class TransactionController extends Controller
                         DB::commit();
                         $this->assignCommission($payment_for,0.3,$request->amount);
                         
+                        $this->clearTransactions($payment_for->parent_referral);
                         //send email confirmation
                         $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
                         
@@ -210,17 +211,7 @@ class TransactionController extends Controller
                 $commission->comm_rate = $comm_rate;
                 $commission->comm_amt = $comm_rate * $amt;
                 $commission->save();
-                 //check if parent has 3 members
-                if($this->findChildCount($parent->id)>=3){
-                   
-                    $members = User::where('parent_referral',$parent->id)->get();
-
-                    foreach($members as $mem){
-                        UserCommission::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
-                        Transactions::where('user_id',$parent->id)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
-                    }
-                }
-                
+                              
                 DB::commit();
                 //recursive function to crawl to members.
                 if($comm_rate==0.3){
@@ -236,5 +227,31 @@ class TransactionController extends Controller
             DB::rollback();
             return false;
         }
+    }
+
+    public function clearTransactions($parentid){
+        DB::beginTransaction();
+        try{
+
+            if($this->findChildCount($parentid)>=3){
+                   
+                $members = User::where('parent_referral',$parentid)->get();
+    
+                foreach($members as $mem){
+                    UserCommission::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                    Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                }
+            }
+            DB::commit();
+            return true;
+        }catch(Exception $e){
+            DB::rollback();
+            return false;
+        }
+        
+    }
+
+    public function checkWithdrawableAmount($parentid){
+        $members = User::where('parent_referral',$parentid)->get();
     }
 }
