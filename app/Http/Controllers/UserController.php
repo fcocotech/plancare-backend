@@ -212,7 +212,7 @@ class UserController extends Controller
         $user->status           = 2;//assign as pending
         $user->password = Hash::make($request->password);
         $user->reference_code=0;
-        
+        $user->cleared = false;
         if($request->photoprofile == null || $request->photoprofile ==""){
             $request->photoprofile ==  "person.png";
         }
@@ -256,15 +256,7 @@ class UserController extends Controller
     //     return User::where('parent_referral',$parentid)->where('status',1)->count();
     // }
     public function apifindChildCount(Request $request){
-        try{
-            $parent = User::where('referral_code',$request->referral_code)->first();
-            $usercount=User::where('parent_referral',$parent->id)->where('status',1)->count();
-            return response()->json(['status' => true, 'usercount' => $usercount]);
-        }catch(Exception $e){
-            return response()->json(['status' => false, 'message' => $e->message]);
-        }
-        
-         
+        return User::where('parent_referral',$request->id)->where('status',1)->count();
     }
     protected function generateReferralCode($userid,$prodid,$parentid){
         $strparentid;
@@ -398,11 +390,25 @@ class UserController extends Controller
     public function updateUserStatus(Request $request){
         DB::beginTransaction();
         try{
-            $user = User::where('id', $request->id)->update(["status"=>3]);
+            $user = User::where('id', $request->id)->first();
+            if($user->status==1){
+                $user->update(["status"=>2]);
+            }elseif($user->status==2){
+                $user->delete();
+            }else{
+                $user->delete();
+            }
             // $user->status= 3;//account deactivated
 
-            Transaction::where('user_id',$request->id)->delete();
+            Transaction::where('commission_from',$request->id)->where("trans_type",2)->delete();
             // $user->delete();
+
+            $parent=User::find($user->parent_referral);
+            if($this->findChildCount($parent->id)<3){
+                    $parent->cleared =0;
+                    $parent->update();
+            }
+            
             DB::commit();
             return response()->json(['status' => true, 'user' => $user]);
         }catch(Exception $e){

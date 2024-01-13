@@ -52,7 +52,7 @@ class User extends Authenticatable
     }
 
     public function parent() {
-        return $this->hasOne(User::class, 'parent_referral')->select('id', 'name','referral_code');
+        return $this->hasOne(User::class,'id', 'parent_referral')->select('id', 'name','referral_code','cleared');
     }
 
     public function getSecQ1AnsAttribute($value) { return str_repeat('*', strlen($value)); }
