@@ -76,7 +76,7 @@ class TransactionController extends Controller
     }
 
     public function makePayment(Request $request) {
-        DB::beginTransaction();
+        // DB::beginTransaction();
         try {
             
             if($request->proof_of_payment==null){
@@ -130,17 +130,13 @@ class TransactionController extends Controller
                         }
 
                         //check if parent has 3 members already
-                        $parent=User::find($payment_for->parent_referral);
-                        if($this->findChildCount($parent->id)>=3){
-                                $parent->cleared =1;
-                                $parent->update();
-                        }
+                        $this->clearParents($payment_for->parent_referral);
                         // commission distribution
-                        DB::commit();
+                        // DB::commit();
                         $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
                         //clear transactions
                         //get other members of parent id
-                        $members = User::where('parent_referral',$payment_for->parent_referral)->get();
+                        $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get();
                         $this->clearTransactions($payment_for->parent_referral,$members);
                         //check withdrawable
                         $trans=[];
@@ -163,10 +159,19 @@ class TransactionController extends Controller
             }
             
         } catch(Exception $e) {
-            DB::rollback();
+            // DB::rollback();
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
         }
         
+    }
+    public function clearParents($parentid){
+        $parent=User::find($parentid);
+        if($this->findChildCount($parent->id)>=3){
+                $parent->cleared =1;
+                $parent->update();
+        }
+
+        return true;
     }
 
     public function sendPaymentConfirmationEmail($trans_no,$user,$product) {
@@ -246,11 +251,11 @@ class TransactionController extends Controller
         try{
             
             if($parentid!=1){
-                if($this->findChildCount($parentid)>=3){
+                if($this->findChildCount($parentid)>2){
                     
                     // $members = User::where('parent_referral',$parentid)->get();
                     foreach($members as $mem){
-                        UserCommission::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
+                        // UserCommission::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                         Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                     }
                     DB::commit();
@@ -298,10 +303,10 @@ class TransactionController extends Controller
     }
 
     public function APIcleartransactions(Request $request){
-        $members = User::where('parent_referral',$request->id)->get();
+        $members = User::where('parent_referral',$request->id)->where('status',1)->get();
         $status = $this->clearTransactions($request->id,$members);
         
-        return response()->json(['status' => $status, "data"=>$members]);
+        return response()->json(['status' => $status,"parent"=>$request->id, "data"=>$members]);
     }
     public function APIcheckWithdrawableAmount(Request $request){
       
