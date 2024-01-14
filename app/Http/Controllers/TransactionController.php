@@ -76,7 +76,7 @@ class TransactionController extends Controller
     }
 
     public function makePayment(Request $request) {
-        // DB::beginTransaction();
+      
         try {
             
             if($request->proof_of_payment==null){
@@ -132,7 +132,6 @@ class TransactionController extends Controller
                         //check if parent has 3 members already
                         $this->clearParents($payment_for->parent_referral);
                         // commission distribution
-                        // DB::commit();
                         $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
                         //clear transactions
                         //get other members of parent id
@@ -189,7 +188,7 @@ class TransactionController extends Controller
     }
 
     protected function assignCommission($member,$newmemberid,$comm_rate,$amt){
-        DB::beginTransaction();
+        // DB::beginTransaction();
         try{
             // $newmemberid=$member->id;
             $user = Auth::user();
@@ -228,7 +227,7 @@ class TransactionController extends Controller
                     $commission->cleared=false;
                     $commission->save();
                                 
-                    DB::commit();
+                    // DB::commit();
                     //recursive function to crawl to members.
                     if($comm_rate==0.3){
                         return $this->assignCommission($parent,$newmemberid,0.1,$amt);
@@ -241,13 +240,13 @@ class TransactionController extends Controller
                 }
             }
         }catch(Exception $e){
-            DB::rollback();
+            // DB::rollback();
             return false;
         }
     }
 
     public function clearTransactions($parentid,$members){
-        DB::beginTransaction();
+        // DB::beginTransaction();
         try{
             
             if($parentid!=1){
@@ -258,7 +257,7 @@ class TransactionController extends Controller
                         // UserCommission::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                         Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                     }
-                    DB::commit();
+                    // DB::commit();
                     $parent=User::where('id',$parentid)->first();
                     return $this->clearTransactions($parent->parent_referral,$members);
                 }else{
@@ -270,7 +269,7 @@ class TransactionController extends Controller
             }
             return true;
         }catch(Exception $e){
-            DB::rollback();
+            // DB::rollback();
             return false;
         }
         
@@ -304,6 +303,7 @@ class TransactionController extends Controller
 
     public function APIcleartransactions(Request $request){
         $members = User::where('parent_referral',$request->id)->where('status',1)->get();
+        $status=true;
         $status = $this->clearTransactions($request->id,$members);
         
         return response()->json(['status' => $status,"parent"=>$request->id, "data"=>$members]);
@@ -315,9 +315,9 @@ class TransactionController extends Controller
             $trans= $this->checkWithdrawableAmount($request->memberid,$trans);
 
             if($trans!=null){
-                return response()->json(['status' => true, 'message' => 'No cleared',"data"=>$trans]);
+                return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$trans]);
             }else{
-                return response()->json(['status' => false, 'message' => 'No cleared',"data"=>$trans]);
+                return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$trans]);
             }
             
         }catch(Exception $e){
