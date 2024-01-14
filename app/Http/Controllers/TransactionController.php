@@ -28,7 +28,7 @@ class TransactionController extends Controller
 
         $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->get();
         // $earnings = UserCommission::where('user_id', $user->id)->get();
-        $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
+        $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->get();
         $total_earnings = $earnings->sum('amount');
         return response()->json([
             'status' => true,
@@ -248,20 +248,19 @@ class TransactionController extends Controller
     public function clearTransactions($parentid,$members){
         // DB::beginTransaction();
         try{
-            
+            $parent=User::where('id',$parentid)->first();
             if($parentid!=1){
-                if($this->findChildCount($parentid)>2){
+                if($parent->cleared==1){
                     
-                    // $members = User::where('parent_referral',$parentid)->get();
                     foreach($members as $mem){
                         // UserCommission::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                         Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
                     }
                     // DB::commit();
-                    $parent=User::where('id',$parentid)->first();
                     return $this->clearTransactions($parent->parent_referral,$members);
                 }else{
-                    return false;
+                    //proceed to the next parent
+                    return $this->clearTransactions($parent->parent_referral,$members);
                 }
             }
             else{
@@ -303,7 +302,7 @@ class TransactionController extends Controller
 
     public function APIcleartransactions(Request $request){
         $members = User::where('parent_referral',$request->id)->where('status',1)->get();
-        $status=true;
+   
         $status = $this->clearTransactions($request->id,$members);
         
         return response()->json(['status' => $status,"parent"=>$request->id, "data"=>$members]);
