@@ -84,7 +84,7 @@ class TransactionController extends Controller
             }else{
                 $user = Auth::user();
                 $cleared=0;
-                $payment_for = User::find($request->id);//get the user info of the member
+                $payment_for = User::where('id',$request->id)->where('status',2)->first();//get the user info of the member
                 //double check for member count
                 if($this->findChildCount($payment_for->parent_referral)>=4){
                     return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
@@ -143,22 +143,23 @@ class TransactionController extends Controller
                         //check withdrawable
                         //Navigate Up to parents
                         if($clearedparents){
-                            $trans=$this->checkUpWithdrawableAmount($payment_for->id,$payment_for->parent_referral,$trans);
+                            // $trans=$this->checkUpWithdrawableAmount($payment_for->id,$payment_for->parent_referral,$trans);
 
-                            // if($trans!=null || !$trans){
-                            //     //Navigate to members. Check other members that are cleared
-                            //     $clearedmembers = $members->where('cleared',1)->get();
-                            //     if($clearedmembers!=null){
-                            //         $this->checkDownWithdrawableAmount($clearedmembers,$trans);
-                            //     }
-                            // }
+                            if($trans!=null || !$trans){
+                                //Navigate to members. Check other members that are cleared
+                                // $clearedmembers = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->where('cleared',1)->get();
+                                $clearedmembers = $members->where('cleared',1);
+                                if($clearedmembers!=null){
+                                    // $this->checkDownWithdrawableAmount($clearedmembers,$trans);
+                                }
+                            }
                         }
                         
                         
                         //send email confirmation
                         $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
                         
-                        return response()->json(['status' => true,'object'=>$product, 'message' => "Payment Successful",'trans'=>$trans]);
+                        return response()->json(['status' => true,'object'=>$product, 'message' => "Payment Successful",'members'=>$clearedmembers]);
                     } else {
                         return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
                     }
@@ -339,7 +340,7 @@ class TransactionController extends Controller
         return response()->json(['status' => $status,"parent"=>$request->id, "data"=>$members]);
     }
     public function APIcheckWithdrawableAmount(Request $request){
-      
+        $dbtrans= DB::beginTransaction();   
         try{
             $trans=[];
             $trans= $this->checkUpWithdrawableAmount($request->memberid,$trans);
