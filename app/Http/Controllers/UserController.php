@@ -155,7 +155,7 @@ class UserController extends Controller
             $request->referral_code='10011';//assign to admin
         }
 
-        $referrerUser = User::where('referral_code',$request->referral_code)->first();
+        $referrerUser = User::where('referral_code',$request->referral_code)->where('status',1)->first();
         
         if($referrerUser==null){
             return response()->json([
