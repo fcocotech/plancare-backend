@@ -145,20 +145,20 @@ class TransactionController extends Controller
                         if($clearedparents){
                             $trans=$this->checkUpWithdrawableAmount($payment_for->id,$payment_for->parent_referral,$trans);
 
-                            if($trans!=null || !$trans){
-                                //Navigate to members. Check other members that are cleared
-                                $clearedmembers = $members->where('cleared',1)->get();
-                                if($clearedmembers!=null){
-                                    $this->checkDownWithdrawableAmount($clearedmembers,$trans);
-                                }
-                            }
+                            // if($trans!=null || !$trans){
+                            //     //Navigate to members. Check other members that are cleared
+                            //     $clearedmembers = $members->where('cleared',1)->get();
+                            //     if($clearedmembers!=null){
+                            //         $this->checkDownWithdrawableAmount($clearedmembers,$trans);
+                            //     }
+                            // }
                         }
                         
                         
                         //send email confirmation
                         $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
                         
-                        return response()->json(['status' => true,'object'=>$product, 'message' => "Payment Successful"]);
+                        return response()->json(['status' => true,'object'=>$product, 'message' => "Payment Successful",'trans'=>$trans]);
                     } else {
                         return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
                     }
