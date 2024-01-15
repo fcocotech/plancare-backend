@@ -276,7 +276,7 @@ class TransactionController extends Controller
     }
 
     protected function checkWithdrawableAmount($memberid,$trans){
-        // DB::beginTransaction();
+       $dbtrans= DB::beginTransaction();
         try{
             $user = User::with("parent")->where('id',$memberid)->first();
             if($user["parent"]->id!=1){
@@ -309,16 +309,16 @@ class TransactionController extends Controller
         return response()->json(['status' => $status,"parent"=>$request->id, "data"=>$members]);
     }
     public function APIcheckWithdrawableAmount(Request $request){
-      
+        $dbtrans= DB::beginTransaction();   
         try{
             $trans=[];
-            $trans= $this->checkWithdrawableAmount($request->memberid,$trans);
-
-            if($trans!=null){
-                return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$trans]);
-            }else{
-                return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$trans]);
-            }
+            // $trans= $this->checkWithdrawableAmount($request->memberid,$trans);
+            return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$trans,"trans"=>$dbtrans]);
+            // if($trans!=null){
+            //     return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$trans,"trans"=>$dbtrans]);
+            // }else{
+            //     return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$trans]);
+            // }
             
         }catch(Exception $e){
          
