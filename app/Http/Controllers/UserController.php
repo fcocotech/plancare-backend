@@ -307,11 +307,12 @@ class UserController extends Controller
             // $user->delete();
 
             $parent=User::find($user->parent_referral);
-            if($this->findChildCount($parent->id)<3){
-                    $parent->cleared =0;
-                    $parent->update();
+            if($parent!=null){
+                if($this->findChildCount($parent->id)<3){
+                        $parent->cleared =0;
+                        $parent->update();
+                }
             }
-            
             DB::commit();
             return response()->json(['status' => true, 'user' => $user]);
         }catch(Exception $e){
