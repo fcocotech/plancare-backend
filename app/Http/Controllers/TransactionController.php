@@ -151,7 +151,7 @@ class TransactionController extends Controller
                                      //Navigate to members. Check other members that are cleared
                                     $clearedmembers = $members->where('cleared',1);
                                     if($clearedmembers!=null){
-                                        $this->checkDownWithdrawableAmount($clearedmembers,$trans);
+                                        $this->checkDownWithdrawableAmount($clearedmembers);
                                     }
                                 }
                                
@@ -342,17 +342,20 @@ class TransactionController extends Controller
     }
 
     protected function checkDownWithdrawableAmount($members){
-        Transaction::where('user_id',$members->parent_referral)->where('commission_from',$members->id)->where('withdrawable',0)->update(['withdrawable'=>1,'cleared'=>1]);
+        $loggeduser = Auth::user();
+        foreach($members as $mem){
+            Transaction::where('user_id',$loggeduser->id)->where('commission_from',$mem->id)->where('cleared',0)->where('withdrawable',0)->where('trans_type',2)->update(['withdrawable'=>1]);
+        
+            //get other cleared members of parent id
+            $clearmembers = User::where('parent_referral',$mem->id)->where("status",1)->where('cleared',1)->get();
 
-        //get other members of parent id
-        $members = User::where('parent_referral',$members->id)->where("status",1)->where('cleared',1)->get();
-
-        if($members!=null){
-            return $this->checkDownWithdrawableAmount($members,$trans);
-        }else{
-            return false;
+            if($clearmembers!=null){
+                return $this->checkDownWithdrawableAmount($clearmembers);
+            }else{
+                return false;
+            }
         }
-
+        
         return true;
     }
     public function APIcleartransactions(Request $request){
@@ -379,7 +382,14 @@ class TransactionController extends Controller
          
             return false;
         }
-       
-      
+    }
+
+    public function APIDowncheckWithdrawableAmount(Request $request){
+        // $dbtrans= DB::beginTransaction();   
+        if($this->checkDownWithdrawableAmount($members)){
+            return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$members]);
+        }else{
+            return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$members]);
+        }
     }
 }
