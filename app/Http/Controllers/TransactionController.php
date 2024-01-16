@@ -313,7 +313,7 @@ class TransactionController extends Controller
                     $members=User::where('parent_referral',$user["parent"]->id)->where('status',1)->get();
                     if($members!=null){
                         foreach($members as $mem){
-                            $transid=Transaction::where('user_id',$loggeduser->id)->where('commission_from',$mem->id)->where('cleared',1)->where('withdrawable',0)->first();
+                            $transid=Transaction::where('user_id',$user["parent"]->id)->where('commission_from',$mem->id)->where('cleared',1)->where('withdrawable',0)->first();
                             
                             if($transid!=null){
                                 array_push($trans,$transid->id);
@@ -325,7 +325,7 @@ class TransactionController extends Controller
                 }else{
                     // DB::rollback();
                     // return response()->json(['status' => false, 'message' => 'No cleared','parent'=>$user]); ;
-                    $trans=null;
+                    // $trans=null;
                     return $trans;
                 }
             }else{
