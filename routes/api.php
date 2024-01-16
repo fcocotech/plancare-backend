@@ -71,4 +71,7 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/product/update-details/{product_id}', 'App\Http\Controllers\ProductController@update');
     Route::get('/products', 'App\Http\Controllers\ProductController@show');
     Route::get('/active-products', 'App\Http\Controllers\ProductController@activeProducts');
+
+    // OTP
+    Route::get('/otp/generate', 'App\Http\Controllers\UserOtpController@generateOTP');
 });
