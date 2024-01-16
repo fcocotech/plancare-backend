@@ -74,4 +74,5 @@ Route::middleware('auth:api')->group(function () {
 
     // OTP
     Route::get('/otp/generate', 'App\Http\Controllers\UserOtpController@generateOTP');
+    Route::post('/otp/verify', 'App\Http\Controllers\UserOtpController@verifyOTP');
 });

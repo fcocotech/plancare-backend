@@ -55,7 +55,23 @@ class UserOtpController extends Controller
         return true;
     }
 
-    public function verifyOTP($user_id, $code) {
+    public function verifyOTP(Request $request) {
+        if(!$request->has('code')){
+            return response()->json(['status'=> false, 'message' => 'One-Time PIN not valid!']);
+        }
+
+        $user = Auth::user();
+
+        $isValidOTP = self::checkOTP( $user->id, $request->code );
+        
+        if($isValidOTP){
+            return response()->json(['status'=> true, 'message' => 'One-Time PIN valid!']);
+        } else {
+            return response()->json(['status'=> false, 'message' => 'Incorrect One-Time PIN']);
+        }
+    }
+
+    public function checkOTP($user_id, $code) {
         if( $code ){
             $user_otps = UserOtp::where('user_id', $user_id)
               ->where( 'expiry', '>=', \Carbon\Carbon::now() )
@@ -63,15 +79,17 @@ class UserOtpController extends Controller
                 
             $is_correct_code = false;  
             
-            foreach( $user_otps as $item ){
-              $ucode = decrypt( $item->secret_code_encrypted );
-              if( $ucode == $code ){
-                $is_correct_code = true;
-                $item->delete();
-              }
+            foreach( $user_otps as $item ){ // loop available pins which are not expired
+                $ucode = decrypt( $item->secret_code_encrypted );
+                if( $ucode == $code ){
+                    $is_correct_code = true;
+                    $item->delete(); // deleted for OTP one time use only
+                }
             }
 
             return $is_correct_code; // wrong OTP if false otherwise correct
         }
+
+        return false;
     }
 }
