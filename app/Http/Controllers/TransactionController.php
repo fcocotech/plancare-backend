@@ -26,10 +26,17 @@ class TransactionController extends Controller
     public function earnings() {
         $user = Auth::user();
 
-        $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->get();
-        // $earnings = UserCommission::where('user_id', $user->id)->get();
-        $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
-        $total_earnings = $earnings->sum('amount');
+        if($user->id==1){
+            $earnings = Transaction::with(['commission_from'])->where('trans_type', '2')->get();
+            // $earnings = UserCommission::where('user_id', $user->id)->get();
+            $withdrawable = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1)->get();
+            $total_earnings = $earnings->sum('amount');
+        }else{
+            $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->get();
+            // $earnings = UserCommission::where('user_id', $user->id)->get();
+            $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
+            $total_earnings = $earnings->sum('amount');
+        }
         return response()->json([
             'status' => true,
             'earnings' => $earnings,

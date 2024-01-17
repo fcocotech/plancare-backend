@@ -463,7 +463,16 @@
                         <h2>{{$referral_code}}</h2>
                         <p>Please remember your user id. You will use this to login to your account and give it as a referral code to your members.</p>
                         <!-- Action -->
-                       
+                        <p>To confirm your registration pleass make your payment through the following payment options<p><br/>
+                        <h4>Bank Transfer</h4><br/>
+                        <p>Bank Name: PNB | Philippine National Bank</p>
+                        <p>Account Number: 300110085725</p>
+                        <p>Account Name: Plancare Ph Inc.</p>
+                        <br>
+                        <h4>PayMaya or Gcash</h4>
+                        <p>Number:</p>
+                        <p>Account Name:</p>
+                        
                         <p>If you did not create an account, please ignore this email or <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a> if you have questions.</p>
                         <p>Thanks,
                           <br>The Plancare PH team</p>
