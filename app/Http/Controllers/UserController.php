@@ -432,7 +432,17 @@ class UserController extends Controller
         $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared')->where('id', $user_id)->first();
         $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared')->where('parent_referral', $leader->id)->where('status', '1')->get();
         
+        $leader->members_count = count($members);
+
+        if($members!=null){
+            foreach($members as $mem){
+                $members_count = User::where('parent_referral', $mem->id)->where('status', '1')->count();
+                $mem->members_count = $members_count;
+            }
+        }
+
         $leader->members = $members;
+
         return response()->json(['status' => true, 'team' => $leader]);
     }
 
