@@ -53,6 +53,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/transactions/earnings', 'App\Http\Controllers\TransactionController@earnings');
     Route::post('/transaction/make-payment', 'App\Http\Controllers\TransactionController@makePayment');
     Route::post('/transaction/checkwithdrawable', 'App\Http\Controllers\TransactionController@APIcheckWithdrawableAmount');
+    Route::post('/transaction/checkwithdrawabledown', 'App\Http\Controllers\TransactionController@APIDowncheckWithdrawableAmount');
     Route::post('/transaction/cleartransactions', 'App\Http\Controllers\TransactionController@APIcleartransactions');
     
     // Route::post('/transaction/commission', 'App\Http\Controllers\TransactionController@APIcommissionDistribution2');
