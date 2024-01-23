@@ -153,13 +153,13 @@ class TransactionController extends Controller
                         //check withdrawable
                         //Navigate Up to parents
                         if($clearedparents){
-                            $trans=$this->checkUpWithdrawableAmount($payment_for->id,$trans,$members);
+                        $trans=$this->checkUpWithdrawableAmount($payment_for->id,$trans,$members);
 
                             if($trans!=null || !$trans){
                                 //clear Parents withdrawable amount
                                 if($this->clearUpWithdrawableAmt($trans)){
                                     
-                                    // check if self is cleared
+                        // check if self is cleared
                                     if($this->findChildCount($payment_for->id)>2){
                                         //Navigate to members. Check other members that are cleared
                                         $clearedmembers = $members->where('cleared',1);
@@ -346,7 +346,7 @@ class TransactionController extends Controller
                             Transaction::where('user_id',$user["parent"]->id)->whereIn('commission_from',$mem)->where('cleared',1)->where('withdrawable',0)->update(["withdrawable"=>0]);
                            
                             // if($transid!=null){
-                            //     array_push($trans,$transid);
+                                //     array_push($trans,$transid);
                             // }
                         }
                     }
@@ -365,7 +365,7 @@ class TransactionController extends Controller
             }
 
 
-        }catch(Exception $e){
+        }catch(Exception $e){ 
             // DB::rollback();
             return false;
         }
