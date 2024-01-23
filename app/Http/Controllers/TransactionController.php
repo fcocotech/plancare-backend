@@ -374,16 +374,16 @@ class TransactionController extends Controller
     protected function checkDownWithdrawableAmount($memberdata,$trans){
         //get cleared fellow members
         try{
-            $members = User::where('parent_referral',$memberdata->parent_referral)->where('status',1)->where('cleared',1)->get();
+            $members = User::with("parent")->where('id',$memberdata->id)->where('status',1)->where('cleared',1)->get();
             //set transactions to withdrawable
             // Transaction::where('user_id',$memberdata->parent_referral)->whereIn('commission_from',$members->get(['id']))->where('cleared',1)->where('withdrawable',0)->where('trans_type',2)->update(['withdrawable'=>1]);
             
             if($members!=null){
                 foreach($members as $mem){
                     $trans_id=Transaction::where('user_id',$memberdata->parent_referral)->where('commission_from',$mem->id)->where('cleared',1)->where('trans_type',2)->get(['id']);
-                    if($trans_id!=null){
-                        array_push($trans,$trans_id);
-                    }
+                    // if($trans_id!=null){
+                    //     array_push($trans,$trans_id);
+                    // }
                     return $this->checkDownWithdrawableAmount($mem,$trans);
                     
                     //get other cleared members of parent id
@@ -396,7 +396,7 @@ class TransactionController extends Controller
                     // }
                 }
             }   
-            return $trans;
+            return $members;
         }catch(Exception $e){
             return false;
         }
