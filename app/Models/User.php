@@ -52,7 +52,7 @@ class User extends Authenticatable
     }
 
     public function parent() {
-        return $this->hasOne(User::class,'id', 'parent_referral')->select('id', 'name','referral_code','cleared');
+        return $this->hasOne(User::class,'id','parent_referral')->select('id', 'name','referral_code','cleared');
     }
 
     public function getSecQ1AnsAttribute($value) { return str_repeat('*', strlen($value)); }
@@ -61,7 +61,11 @@ class User extends Authenticatable
     public function getSecQ4AnsAttribute($value) { return str_repeat('*', strlen($value)); }
     public function getSecQ5AnsAttribute($value) { return str_repeat('*', strlen($value)); }
 
+
     public function members(): HasMany{
         return $this->hasMany(User::class,'parent_referral');
+    }
+    public function clearedmembers(): HasMany{
+        return $this->hasMany(User::class,'parent_referral')->where('cleared',1);
     }
 }

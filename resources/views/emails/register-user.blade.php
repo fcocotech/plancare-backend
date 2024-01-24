@@ -470,8 +470,8 @@
                         <p>Account Name: Plancare Ph Inc.</p>
                         <br>
                         <h4>PayMaya or Gcash</h4>
-                        <p>Number:</p>
-                        <p>Account Name:</p>
+                        <p>Number: 0960 880 7772</p>
+                        <p>Account Name: </p>
                         
                         <p>If you did not create an account, please ignore this email or <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a> if you have questions.</p>
                         <p>Thanks,
