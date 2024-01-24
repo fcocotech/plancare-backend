@@ -150,6 +150,7 @@ class TransactionController extends Controller
                         $clearedmembers=null;
                         $members=[];
                         
+                        $trans=$this->checkDownWithdrawableAmount($payment_for,$trans);
                         //check withdrawable
                         //Navigate Up to parents
                         if($clearedparents){
@@ -353,7 +354,7 @@ class TransactionController extends Controller
                             }
                         }
                     }
-                   
+                    
                     return $this->checkUpWithdrawableAmount($user["parent"]->id,$trans, $members);
                 }else{
                     // DB::rollback();
