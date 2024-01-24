@@ -399,7 +399,7 @@ class TransactionController extends Controller
                     
                 }
             }else{
-                return $trans;
+                $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
             }
             return $trans;
         }catch(Exception $e){
