@@ -413,10 +413,11 @@ class UserController extends Controller
         return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
     }
 
-    protected function getInnerMembers($parentid,$index){
+    
+    protected function getInnerMembers($parentid,$index,$innermembers){
 
         $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $parentid)->where('status', '1')->get();
-
+        array_push($innermembers,$members);
         if($members!=null){
             foreach($members as $mem){
                 $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
