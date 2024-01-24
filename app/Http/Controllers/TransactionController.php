@@ -378,19 +378,21 @@ class TransactionController extends Controller
             
             if($members!=null){
              //set transactions to withdrawable
-            Transaction::where('user_id',$memberdata->parent_referral)->whereIn('commission_from',$members->get(['id']))->where('cleared',1)->where('withdrawable',0)->where('trans_type',2)->update(['withdrawable'=>1]);
+            $memberids=[];
+            array_push($memberids,$members->get(['id']));
+            Transaction::where('user_id',$memberdata->parent_referral)->whereIn('commission_from',$memberids)->where('cleared',1)->where('withdrawable',0)->where('trans_type',2)->update(['withdrawable'=>1]);
            
                 foreach($members as $mem){
-                    $trans_id=Transaction::where('user_id',$memberdata->parent_referral)->where('commission_from',$mem->id)->where('cleared',1)->where('trans_type',2)->get(['id']);
-                    if($trans_id!=null){
-                        array_push($trans,$trans_id);
-                    }
+                    // $trans_id=Transaction::where('user_id',$memberdata->parent_referral)->where('commission_from',$mem->id)->where('cleared',1)->where('trans_type',2)->get(['id']);
+                    // if($trans_id!=null){
+                    //     array_push($trans,$trans_id);
+                    // }
                     return $this->checkDownWithdrawableAmount($mem,$trans);
                 }
             }else{
-                $trans=null;
+                return false;
             }
-            return $trans;
+            return true;
         }catch(Exception $e){
             return false;
         }
@@ -429,13 +431,16 @@ class TransactionController extends Controller
         try{
 
             $members = User::where('id',$request->id)->where("status",1)->first();
+            $memids =[];
+            $memids = User::with("members")->where('parent_referral',$members->parent_referral)->where('status',1)->where('cleared',1)->get();
             $trans=[];
-            $trans=$this->checkDownWithdrawableAmount($members,$trans);
-
+            // $trans=$memids->get(['id']);
+            // $trans=$this->checkDownWithdrawableAmount($members,$trans);
+            
             if($trans!=null){
-                return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$trans,"members"=>$members]);
+                return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$memids,"members"=>$members]);
             }else{
-                return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$trans,"members"=>$members]);
+                return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$memids->id,"members"=>$members]);
             }
         }catch(Exception $e){
             return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$trans,"members"=>$members]);
