@@ -386,6 +386,7 @@ class TransactionController extends Controller
                 foreach($members as $mem){
                     Transaction::where('user_id',$memberdata->parent_referral)->where('commission_from',$mem->id)->where('cleared',1)->where('withdrawable',0)->where('trans_type',2)->update(['withdrawable'=>1]);
                     if($mem->cleared==1){
+                        print_r($mem);
                         return $this->checkDownWithdrawableAmount($mem);
                     }
                     
@@ -395,6 +396,7 @@ class TransactionController extends Controller
             }
             return true;
         }catch(Exception $e){
+            var_dump($e->message());
             return false;
         }
         
