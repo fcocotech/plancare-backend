@@ -302,7 +302,7 @@ class UserController extends Controller
                 $user->delete();
             }
             // $user->status= 3;//account deactivated
-
+            Transaction::where('commission_from',$request->id)->where("trans_type",2)->update(['cleared'=>0]);
             Transaction::where('commission_from',$request->id)->where("trans_type",2)->delete();
             // $user->delete();
 
@@ -401,32 +401,40 @@ class UserController extends Controller
     public function teams(Request $request){
         $user = Auth::user();
         
-        $leader = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('reference_code', $user->referral_code)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $user->id)->where('status', '1')->get();
+        $leader = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('referral_code', $user->referral_code)->first();
+        $members=[];
+        $members=$this->getInnerMembers($leader->id,$members);
+        // $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $user->id)->where('status', '1')->get();
 
-        foreach($members as $mem){
-            $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
-            $mem->myteam=$member_child;
-        }
+        // foreach($members as $mem){
+        //     $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
+        //     $mem->myteam=$member_child;
+        // }
         
 
         return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
     }
 
     
-    protected function getInnerMembers($parentid,$index,$innermembers){
+    protected function getInnerMembers($parentid,$innermembers){
 
         $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $parentid)->where('status', '1')->get();
-        array_push($innermembers,$members);
         if($members!=null){
-            foreach($members as $mem){
-                $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
-                $mem->myteam=$member_child;
+            
+            if($members!=null){
+                foreach($members as $mem){
+                    $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
+                    if($member_child!=null){
+                        array_push($innermembers,$mem);
+                        $innermembers=$this->getInnerMembers($mem->id,$innermembers);
+                    }
+                    // $mem->myteam=$member_child;
+                
+                }
+                // return $this->getInnerMembers($mem->id,$innermembers);
             }
-            // getInnerMembers($)
         }
-
-        return $members;
+        return $innermembers;
     }
 
     public function team(Request $request, $user_id){        
