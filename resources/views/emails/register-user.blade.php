@@ -469,9 +469,9 @@
                         <p>Account Number: 300110085725</p>
                         <p>Account Name: Plancare Ph Inc.</p>
                         <br>
-                        <h4>PayMaya or Gcash</h4>
-                        <p>Number: 0960 880 7772</p>
-                        <p>Account Name: </p>
+                        <h4>Gcash</h4>
+                        <p>Number: 09151501050</p>
+                        <p>Account Name: DA****B L.</p>
                         
                         <p>If you did not create an account, please ignore this email or <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a> if you have questions.</p>
                         <p>Thanks,
