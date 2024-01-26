@@ -16,7 +16,7 @@ class WithdrawalAccountController extends Controller
         $withdrawalAccounts = WithdrawalAccount::with(['types'])->where('user_id', $user_id)->where('status', 1)->get();
         $accounts = [];
         foreach($withdrawalAccounts as $key => $withdrawalAccount){
-            $accounts[$key]['code'] = $withdrawalAccount->id;
+            $accounts[$key]['code'] = $withdrawalAccount->type;
             $accounts[$key]['name'] = $withdrawalAccount->types->name;
         }
         return response()->json(['status' => true, 'accounts' => $accounts]);

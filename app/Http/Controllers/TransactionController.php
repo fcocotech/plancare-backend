@@ -463,4 +463,41 @@ class TransactionController extends Controller
         }
         
     }
+
+    public function withdrawalRequest(Request $request) {
+        try{
+            $user = Auth::user();
+            // check total earnins or validate
+            $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->get();
+            // $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
+            $total_earnings = $earnings->sum('amount');
+
+            if($request->points_to_withdraw < 5000){
+                return response()->json(['status' => false, 'message' => 'Withdrawable amount limit is 5,000.00']);
+            }
+
+            if($request->points_to_withdraw > $total_earnings){
+                return response()->json(['status' => false, 'message' => 'Points to withdraw should not exceed the total withdrawable points.']);
+            }
+
+            $data = [
+                'user_id' => $user->id,
+                'amount' => $request->points_to_withdraw,
+                'type'=> 3, // withdrawal new
+                'processed_by' => $user->id,
+                'payment_method' => $request->withdrawal_method,
+                'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
+                'description' => 'Earnings Withdrawal',
+                'status' => 2, // pending
+                'proof_url' => ''
+            ];
+
+            //make transaction
+            $transaction = self::create($data);
+
+            return response()->json(['status' => $transaction['status'], 'message' => $transaction['status'] ? 'Withdraw requests successful and marked as pending.' : $transaction['message']]);
+        } catch (\Exception $e){
+            return response()->json(['status' => false, 'message' => 'There was an error on your request.', 'detail' => $e->getMessage()]);
+        }
+    }
 }

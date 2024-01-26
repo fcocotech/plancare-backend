@@ -55,6 +55,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/transaction/checkwithdrawable', 'App\Http\Controllers\TransactionController@APIcheckWithdrawableAmount');
     Route::post('/transaction/checkwithdrawabledown', 'App\Http\Controllers\TransactionController@APIDowncheckWithdrawableAmount');
     Route::post('/transaction/cleartransactions', 'App\Http\Controllers\TransactionController@APIcleartransactions');
+    Route::post('/transaction/withdrawal-requests', 'App\Http\Controllers\TransactionController@withdrawalRequest');
     
     // Route::post('/transaction/commission', 'App\Http\Controllers\TransactionController@APIcommissionDistribution2');
 
