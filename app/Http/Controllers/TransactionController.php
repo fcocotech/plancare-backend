@@ -389,14 +389,14 @@ class TransactionController extends Controller
             if($clearmembers!=null){
              //set transactions to withdrawable
                 foreach($clearmembers as $mem){
-                    $transid = Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('withdrawable',0)->where('trans_type',2)->get(['id','commission_from','amount']);
-                    if($transid!=null && $mem->cleared){
+                    $transid = Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('withdrawable',0)->where('trans_type',2)->get(['id','user_id','commission_from','amount']);
+                    if($transid!=null){
                         array_push($trans,$transid);
                     }
 
-                    // if($mem->cleared==1){
+                    if($mem->cleared==1){
                         $trans=$this->checkDownWithdrawableAmount($mem->id,$trans);
-                    // }
+                    }
                     
                 }
             }else{
