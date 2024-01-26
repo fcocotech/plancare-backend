@@ -371,22 +371,19 @@ class TransactionController extends Controller
         }
     }
 
-    protected function checkDownWithdrawableAmount($members){
-        // $loggeduser = Auth::user();
-        foreach($members as $mem){
-            //set all member child nodes are withdrawable
-            Transaction::where('user_id',$mem->parent_referral)->where('commission_from',$mem->id)->where('cleared',0)->where('withdrawable',0)->where('trans_type',2)->update(['withdrawable'=>1]);
+    protected function checkDownWithdrawableAmount($parentid,$trans){
         
-            //get other cleared members of parent id
-            $clearmembers = User::where('parent_referral',$mem->id)->where("status",1)->where('cleared',1)->get();
-
+        try{
+            //get cleared fellow members
+            $clearmembers = User::with("members")->where('parent_referral',$parentid)->where('status',1)->where('cleared',1)->get();
+            
             if($clearmembers!=null){
              //set transactions to withdrawable
                 foreach($clearmembers as $mem){
-                    $transid = Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('withdrawable',0)->where('trans_type',2)->get(['id','commission_from','amount']);
-                    if($transid!=null && $mem->cleared){
-                        array_push($trans,$transid);
-                    }
+                    // $transid = Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',1)->where('withdrawable',0)->where('trans_type',2)->get(['id','commission_from','amount']);
+                    // if($transid!=null){
+                    //     array_push($trans,$transid);
+                    // }
 
                     // if($mem->cleared==1){
                         $trans=$this->checkDownWithdrawableAmount($mem->id,$trans);
@@ -428,12 +425,25 @@ class TransactionController extends Controller
     }
 
     public function APIDowncheckWithdrawableAmount(Request $request){
-        // $dbtrans= DB::beginTransaction();   
-        if($this->checkDownWithdrawableAmount($members)){
-            return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$members]);
-        }else{
-            return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$members]);
+        // $dbtrans= DB::beginTransaction();
+        try{
+
+            $members = User::with('parent','clearedmembers')->where('id',$request->id)->where("status",1)->first();
+            $memids =[];
+            $memids = User::with('clearedmembers')->where('parent_referral',$members->parent_referral)->where('status',1)->where('cleared',1);
+            $trans=[];
+            // $trans=$memids->get(['id']);
+            $trans=$this->checkDownWithdrawableAmount($members->parent_referral,$trans);
+            // array_merge(...$memids->get(['id'])->toArray());
+            if($trans!=null){
+                return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$trans,"members"=>$memids->get(['id'])->toArray()]);
+            }else{
+                return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$trans,"members"=>$memids->get(['id'])->toArray()]);
+            }
+        }catch(Exception $e){
+            return response()->json(['status' => false, 'message' => 'Error',"data"=>$members,"members"=>$memids->get(['id'])->toArray()]);
         }
+        
     }
 
     public function withdrawalRequest(Request $request) {
