@@ -36,4 +36,8 @@ class Transaction extends Model
         return $this->hasOne(User::class, 'id', 'commission_from');
     }
 
+    public function mode_of_payment() {
+        return $this->hasOne(WithdrawalAccountType::class, 'id', 'payment_method');
+    }
+
 }

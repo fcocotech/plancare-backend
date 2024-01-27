@@ -45,6 +45,21 @@ class TransactionController extends Controller
         ]);
     }
 
+    public function withdrawalRequests() {
+        $user = Auth::user();
+
+        if($user->id == 1) {
+            $withdrawals = Transaction::with(['user','mode_of_payment'])->whereIn('trans_type', ['3','4','5'])->get();
+        } else {
+            $withdrawals = Transaction::with(['user','mode_of_payment'])->where('user_id', '2')->whereIn('trans_type', ['3','4','5'])->get();
+        }
+
+        return response()->json([
+            'status' => true,
+            'withdrawal_requests' => $withdrawals
+        ]);
+    }
+
     public function create($data) {
         DB::beginTransaction();
         try{
