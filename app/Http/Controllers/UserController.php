@@ -294,6 +294,7 @@ class UserController extends Controller
         DB::beginTransaction();
         try{
             $user = User::where('id', $request->id)->first();
+            
             if($user->status==1){
                 $user->update(["status"=>2]);
             }elseif($user->status==2){
@@ -302,7 +303,7 @@ class UserController extends Controller
                 $user->delete();
             }
             // $user->status= 3;//account deactivated
-            Transaction::where('commission_from',$request->id)->where("trans_type",2)->update(['cleared'=>0]);
+            Transaction::where('commission_from',$request->id)->where("trans_type",2)->update(['cleared'=>0,'withdrawable'=>0]);
             Transaction::where('commission_from',$request->id)->where("trans_type",2)->delete();
             // $user->delete();
 

@@ -29,6 +29,7 @@ class TransactionController extends Controller
         if($user->id==1){
             $earnings = Transaction::with(['commission_from'])->where('trans_type', '2')->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
+            $cleared = Transaction::with(['commission_from'])->where('trans_type', '2')->where('cleared',1)->sum('amount');
             $withdrawable = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1)->get();
             $total_earnings = $earnings->sum('amount');
         }else{
@@ -40,6 +41,7 @@ class TransactionController extends Controller
         return response()->json([
             'status' => true,
             'earnings' => $earnings,
+            'cleared' => $cleared,
             'total_earnings' => $total_earnings,
             'total_withdrawable'=>$withdrawable->sum('amount')
         ]);
