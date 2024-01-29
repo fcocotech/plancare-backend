@@ -437,6 +437,7 @@
   <![endif]-->
   </head>
   <body>
+    <span class="preheader">Use this link to verify your email.</span>
     <table class="email-wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
       <tr>
         <td align="center">
@@ -456,22 +457,23 @@
                   <tr>
                     <td class="content-cell">
                       <div class="f-fallback">
-                        <h1>Withdrawal Processing</h1>
+                        <h1>Withdrawal Cancelled</h1>
                         <p>Hi, {{$name}}</p>
-                        <p>This is to inform you that we have received your withdrawal request for <b>{{$trans_no}}</b>. Currently, the withdrawal is being processed, and we are working diligently to complete the transaction.</p>
+                        <p>This is to notify you that your withdrawal request for <b>{{$trans_no}}</b> was cancelled.</p>
                         <p><b>Transaction Details</b></p>
                         <p style="margin: 0;">Transaction No: <b>{{$trans_no}}</b></p>
                         <p style="margin: 0;">Amount to Withdraw: <b>{{$amount_to_withdraw}}</b></p>
                         <p style="margin: 0;">Less: Admin Fee <b>{{$admin_fee}}</b></p>
                         <p><b>Total Amount to Receive: {{$amount_to_receive}}</b></p>
-                        <p>Withdrawal Method: <b>{{$withdrawal_method}}</b></p>
+                        <p><b>Withdrawal Method: {{$withdrawal_method}}</b></p>
                         <!-- Action -->
-                        <p>Please be advised that the processing will take 3-5 business days.</p>
-                        <p>If you did not make this withdrawal please contact <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
-                        <p>Thank you,
-                          <br>The Plancare PH team</p>
+                        <!-- (You may include additional details or action steps if needed) -->
+
+                        <p>If you have any questions or concerns regarding your withdrawal, please feel free to contact us at <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
+                        <p>Thank you for your understanding.
+                            <br>The Plancare PH team</p>
                         <!-- Sub copy -->
-                       
+                        <!-- (Any additional information or messages can be added here) -->
                       </div>
                     </td>
                   </tr>

@@ -437,7 +437,6 @@
   <![endif]-->
   </head>
   <body>
-    <span class="preheader">Use this link to verify your email.</span>
     <table class="email-wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
       <tr>
         <td align="center">
@@ -459,7 +458,7 @@
                       <div class="f-fallback">
                         <h1>Withdrawal In Progress</h1>
                         <p>Hi, {{$name}}</p>
-                        <p>This is to notify you that your withdrawal request for <b>{{$tran_no}}</b> is currently in progress. Our team is diligently working to process the withdrawal, and we appreciate your patience during this time.</p>
+                        <p>This is to notify you that your withdrawal request for <b>{{$trans_no}}</b> is currently in progress. Our team is diligently working to process the withdrawal, and we appreciate your patience during this time.</p>
                         <p><b>Transaction Details</b></p>
                         <p style="margin: 0;">Transaction No: <b>{{$trans_no}}</b></p>
                         <p style="margin: 0;">Amount to Withdraw: <b>{{$amount_to_withdraw}}</b></p>

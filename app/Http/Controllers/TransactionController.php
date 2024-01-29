@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\{Transaction, UserCommission, Commission, ProductPurchase,Product};
+use App\Models\{Transaction, UserCommission, Commission, ProductPurchase, Product, WithdrawalAccountType};
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -27,12 +27,12 @@ class TransactionController extends Controller
         $user = Auth::user();
 
         if($user->id==1){
-            $earnings = Transaction::with(['commission_from'])->where('trans_type', '2')->get();
+            $earnings = Transaction::with(['commission_from'])->where('trans_type', '2')->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
             $withdrawable = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1)->get();
             $total_earnings = $earnings->sum('amount');
         }else{
-            $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->get();
+            $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
             $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
             $total_earnings = $earnings->sum('amount');
@@ -49,9 +49,9 @@ class TransactionController extends Controller
         $user = Auth::user();
 
         if($user->id == 1) {
-            $withdrawals = Transaction::with(['user','mode_of_payment'])->whereIn('trans_type', ['3','4','5'])->get();
+            $withdrawals = Transaction::with(['user','mode_of_payment'])->whereIn('withdrawable', ['2','3','4','5'])->get();
         } else {
-            $withdrawals = Transaction::with(['user','mode_of_payment'])->where('user_id', '2')->whereIn('trans_type', ['3','4','5'])->get();
+            $withdrawals = Transaction::with(['user','mode_of_payment'])->where('user_id', '2')->whereIn('withdrawable', ['2','3','4','5'])->get();
         }
 
         return response()->json([
@@ -75,7 +75,7 @@ class TransactionController extends Controller
             $transaction->trans_type = $data['type'];
             $transaction->status = $data['status'];
             $transaction->cleared=false;
-            $transaction->withdrawable=false;
+            $transaction->withdrawable= $data['withdrawable'] ?? false;
             $transaction->commission_rate = $data['commission_rate'] ?? 0;
             if(isset($data['commission_from'])){
                 $transaction->commission_from = $data['commission_from'];
@@ -523,21 +523,60 @@ class TransactionController extends Controller
             $data = [
                 'user_id' => $user->id,
                 'amount' => $request->points_to_withdraw,
-                'type'=> 3, // withdrawal new
+                'type'=> 2, // commission
                 'processed_by' => $user->id,
                 'payment_method' => $request->withdrawal_method,
                 'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
                 'description' => 'Earnings Withdrawal',
-                'status' => 2, // pending
-                'proof_url' => ''
+                'status' => 2,
+                'proof_url' => '',
+                'withdrawable' => 2, // 2 - pending, 3 - in progress, 4 - released, 5 - cancelled
             ];
 
             //make transaction
             $transaction = self::create($data);
 
+            $mode_of_payment = WithdrawalAccountType::where('id', $request->withdrawal_method)->first();
+
+            Mail::send('emails.withdrawal-status.in-progress', [
+                'name' => $user->name,
+                'trans_no' => $data['transaction_id'],
+                'amount_to_withdraw' => $data['amount'],
+                'admin_fee' => 50.00,
+                'amount_to_receive' => ($data['amount'] - 50),
+                'withdrawal_method' => $mode_of_payment->name ?? '--',
+            ], function ($message) use ($user, $data) {
+                $message->to($user->email)->subject('Your Withdrawal Request is In Progress with Transaction ID: '.$data['transaction_id']);
+            });
+
             return response()->json(['status' => $transaction['status'], 'message' => $transaction['status'] ? 'Withdraw requests successful and marked as pending.' : $transaction['message']]);
         } catch (\Exception $e){
             return response()->json(['status' => false, 'message' => 'There was an error on your request.', 'detail' => $e->getMessage()]);
         }
+    }
+
+    public function withdrawalRequestCancelled(Request $request) {
+        $user = Auth::user();
+
+        $transaction = Transaction::with(['mode_of_payment'])->where('transaction_id', $request->transaction_id)->first();
+        if(!$transaction){
+            return response()->json(['status' => false, 'message' => 'Transaction not valid!']);
+        }
+
+        $transaction->withdrawable = 5; // cancelled 
+        $transaction->update();
+
+        Mail::send('emails.withdrawal-status.cancelled', [
+            'name' => $user->name,
+            'trans_no' => $transaction->transaction_id,
+            'amount_to_withdraw' => $transaction->amount,
+            'admin_fee' => 50.00,
+            'amount_to_receive' => ($transaction->amount - 50),
+            'withdrawal_method' => $transaction->mode_of_payment->name ?? '--',
+        ], function ($message) use ($user, $transaction) {
+            $message->to($user->email)->subject('You\'ve Cancelled Your Withdrawal Request with Transaction ID: '.$transaction->transaction_id);
+        });
+
+        return response()->json(['status' => true, 'message' => 'Transaction: '.$request->transaction_id. ' was cancelled!']);
     }
 }

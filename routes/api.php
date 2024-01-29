@@ -52,6 +52,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/transactions/get', 'App\Http\Controllers\TransactionController@get');
     Route::get('/transactions/earnings', 'App\Http\Controllers\TransactionController@earnings');
     Route::get('/transactions/withrawal-requests', 'App\Http\Controllers\TransactionController@withdrawalRequests');
+
+    Route::post('/transaction/cancel-withrawal-requests', 'App\Http\Controllers\TransactionController@withdrawalRequestCancelled');
     Route::post('/transaction/make-payment', 'App\Http\Controllers\TransactionController@makePayment');
     Route::post('/transaction/checkwithdrawable', 'App\Http\Controllers\TransactionController@APIcheckWithdrawableAmount');
     Route::post('/transaction/checkwithdrawabledown', 'App\Http\Controllers\TransactionController@APIDowncheckWithdrawableAmount');
