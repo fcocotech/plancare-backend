@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\{Transaction, UserCommission, Commission, ProductPurchase, Product, WithdrawalAccountType};
+use App\Models\{Transaction, UserCommission, Commission, ProductPurchase, Product, WithdrawalAccount, WithdrawalAccountType};
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -509,6 +509,22 @@ class TransactionController extends Controller
         } catch (\Exception $e){
             return response()->json(['status' => false, 'message' => 'There was an error on your request.', 'detail' => $e->getMessage()]);
         }
+    }
+
+    public function withdrawalRequestFullDetails(Request $request) {
+        // get user connected bank
+        $transaction = Transaction::with([
+            'mode_of_payment',
+            'user',
+            'user.withdrawal_accounts',
+        ])->where('transaction_id', $request->transaction_id)->first();
+        
+        $requested_account = WithdrawalAccount::where('user_id', $transaction->user->id)->where('type', $transaction->payment_method)->first();
+        $transaction->requested_account = $requested_account;
+        if(!$transaction){
+            return response()->json(['status' => false, 'message' => 'Transaction not valid!']);
+        }
+        return response()->json(['status' => true, 'transaction' => $transaction]);
     }
 
     public function withdrawalRequestCancelled(Request $request) {

@@ -68,4 +68,8 @@ class User extends Authenticatable
     public function clearedmembers(): HasMany{
         return $this->hasMany(User::class,'parent_referral')->where('cleared',1);
     }
+
+    public function withdrawal_accounts(): HasMany {
+        return $this->hasMany(WithdrawalAccount::class, 'user_id', 'id');
+    }
 }
