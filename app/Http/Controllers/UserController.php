@@ -294,6 +294,7 @@ class UserController extends Controller
         DB::beginTransaction();
         try{
             $user = User::where('id', $request->id)->first();
+            
             if($user->status==1){
                 $user->update(["status"=>2]);
             }elseif($user->status==2){
@@ -302,7 +303,7 @@ class UserController extends Controller
                 $user->delete();
             }
             // $user->status= 3;//account deactivated
-            Transaction::where('commission_from',$request->id)->where("trans_type",2)->update(['cleared'=>0]);
+            Transaction::where('commission_from',$request->id)->where("trans_type",2)->update(['cleared'=>0,'withdrawable'=>0]);
             Transaction::where('commission_from',$request->id)->where("trans_type",2)->delete();
             // $user->delete();
 
@@ -402,19 +403,15 @@ class UserController extends Controller
         $user = Auth::user();
         
         $leader = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('referral_code', $user->referral_code)->first();
-        $members=[];
+        $members=array("members"=>[],"count"=>0);
         $members=$this->getInnerMembers($leader->id,$members);
-        // $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $user->id)->where('status', '1')->get();
-
-        // foreach($members as $mem){
-        //     $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
-        //     $mem->myteam=$member_child;
-        // }
-        
-
-        return response()->json(['status' => true, 'team' => $leader, 'members' => $members]);
+       
+        return response()->json(['status' => true, 'team' => $leader, 'members' => $members["members"],'count'=>$members["count"]]);
     }
 
+    public function teamsCount(Request $request){
+        
+    }
     
     protected function getInnerMembers($parentid,$innermembers){
 
@@ -425,7 +422,8 @@ class UserController extends Controller
                 foreach($members as $mem){
                     $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
                     if($member_child!=null){
-                        array_push($innermembers,$mem);
+                        array_push($innermembers["members"],$mem);
+                        $innermembers["count"] += 1;
                         $innermembers=$this->getInnerMembers($mem->id,$innermembers);
                     }
                     // $mem->myteam=$member_child;
