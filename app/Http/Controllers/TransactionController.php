@@ -551,4 +551,62 @@ class TransactionController extends Controller
 
         return response()->json(['status' => true, 'message' => 'Transaction: '.$request->transaction_id. ' was cancelled!']);
     }
+
+    public function withdrawalRequestStatusUpdate(Request $request) {
+
+        $transaction = Transaction::with(['user', 'mode_of_payment'])->where('transaction_id', $request->transaction_id)->first();
+        if(!$transaction){
+            return response()->json(['status' => false, 'message' => 'Transaction not valid!']);
+        }
+        
+        $transaction_user = $transaction->user;
+
+        if(!in_array($request->new_status, [2, 3, 4, 5])) {
+            return response()->json(['status' => false, 'message' => 'Status not valid!']);
+        }
+    
+        $transaction->withdrawable = $request->new_status;
+        $transaction->update();
+
+        $transaction_status = "";
+        $subject = "";
+        $template = "";
+        switch($request->new_status) {
+            case '2': case 2:
+                $transaction_status = 'In Progress';
+                $subject = 'Your Withdrawal Request is In Progress with Transaction ID: '.$transaction->transaction_id; 
+                $template = "emails.withdrawal-status.in-progress";
+            break;
+            case '3': case 3:
+                $transaction_status = 'Processing';
+                $subject = 'Your Withdrawal Request is Processing with Transaction ID: '.$transaction->transaction_id;
+                $template = "emails.withdrawal-status.processing";
+            break;
+            case '4': case 4:
+                $transaction_status = 'Released'; 
+                $subject = 'Your Withdrawal Request has been Successfully Processed and Funds Released with Transaction ID: '.$transaction->transaction_id;
+                $template = "emails.withdrawal-status.released";
+            break;
+            case '5': case 5:
+                $transaction_status = 'Cancelled';
+                $subject = 'Your Withdrawal Request has been Cancelled with Transaction ID: '.$transaction->transaction_id;
+                $template = "emails.withdrawal-status.cancelled";
+            break;
+            default:
+            break;
+        }
+
+        Mail::send($template, [
+            'name' => $transaction_user->name,
+            'trans_no' => $transaction->transaction_id,
+            'amount_to_withdraw' => $transaction->amount,
+            'admin_fee' => 50.00,
+            'amount_to_receive' => ($transaction->amount - 50),
+            'withdrawal_method' => $transaction->mode_of_payment->name ?? '--',
+        ], function ($message) use ($transaction_user, $subject) {
+            $message->to($transaction_user->email)->subject($subject);
+        });
+
+        return response()->json(['status' => true, 'message' => 'Transaction: '.$request->transaction_id. ' status was updated to '.$transaction_status]);
+    }
 }
