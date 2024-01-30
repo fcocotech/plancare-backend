@@ -80,6 +80,7 @@ class TransactionController extends Controller
             $transaction->cleared=false;
             $transaction->withdrawable= $data['withdrawable'] ?? false;
             $transaction->commission_rate = $data['commission_rate'] ?? 0;
+            $transaction->remarks = $data['remarks'] ?? 0;
             if(isset($data['commission_from'])){
                 $transaction->commission_from = $data['commission_from'];
             }
@@ -127,7 +128,8 @@ class TransactionController extends Controller
                         'description' => $request->description,
                         'parent_referral'=>$payment_for->parent_referral,
                         'status' => 1,
-                        'proof_url' => $request->proof_of_payment
+                        'proof_url' => $request->proof_of_payment,
+                        'remarks' => $request->remarks,
                     ];
 
                     if($request->has('proof_of_payment') && $request->proof_of_payment != ''){
@@ -339,7 +341,7 @@ class TransactionController extends Controller
 
                     $clear_member=User::where('parent_referral',$user->id)->where('status',1)->get(['id']);
                     if($clear_member!=null){
-                        var_dump($clear_member);
+                        // var_dump($clear_member);
                         array_push($members,$clear_member);
                     }
                     // Transaction::where('user_id',$user["parent"]->id)->whereIn('commission_from',$mem->id)->where('cleared',1)->where('withdrawable',0)->first();
@@ -353,7 +355,7 @@ class TransactionController extends Controller
                             }
                         }
                     }
-                    print($user->id);
+                    // print($user->id);
                     $trans=$this->checkUpWithdrawableAmount($user->parent_referral,$trans, $members);
                 }
                 // else{
@@ -370,7 +372,7 @@ class TransactionController extends Controller
             // }
             // print_r($members);
             return $members;
-
+ 
         }catch(Exception $e){ 
             // DB::rollback();
             return false;
