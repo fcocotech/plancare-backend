@@ -339,21 +339,22 @@ class TransactionController extends Controller
 
                     $clear_member=User::where('parent_referral',$user->id)->where('status',1)->get(['id']);
                     if($clear_member!=null){
-                        var_dump($clear_member);
+                        // print($clear_member);
                         array_push($members,$clear_member);
                     }
+                    // print_r($members);
                     // Transaction::where('user_id',$user["parent"]->id)->whereIn('commission_from',$mem->id)->where('cleared',1)->where('withdrawable',0)->first();
                     if($members!=null){
                         foreach($members as $mem){
-                            $transid=Transaction::where('user_id',$user->id)->whereIn('commission_from',$mem)->where('cleared',1)->where('withdrawable',0)->get(['id','user_id','commission_from','amount']);
-                            // Transaction::where('user_id',$user["parent"]->id)->whereIn('commission_from',$mem)->where('cleared',1)->where('withdrawable',0)->update(["withdrawable"=>0]);
+                            // $transid=Transaction::where('user_id',$user->id)->whereIn('commission_from',$mem)->where('cleared',1)->where('withdrawable',0)->get(['id','user_id','commission_from','amount']);
+                            Transaction::where('user_id',$user["parent"]->id)->whereIn('commission_from',$mem)->where('cleared',1)->where('withdrawable',0)->update(["withdrawable"=>1]);
                             // print_r($members);
-                            if($transid!=null){
-                                array_push($trans,$transid);
-                            }
+                            // if($transid!=null){
+                            //     array_push($trans,$transid);
+                            // }
                         }
                     }
-                    print($user->id);
+                    // print($user->id);
                     $trans=$this->checkUpWithdrawableAmount($user->parent_referral,$trans, $members);
                 }
                 // else{
@@ -392,11 +393,10 @@ class TransactionController extends Controller
                 }
                 // $members=[];
                 // $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
-            }else{
-
-                $members=[];
-                $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
             }
+            $members=[];
+            $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
+            
             
             return $trans;
         }catch(Exception $e){
