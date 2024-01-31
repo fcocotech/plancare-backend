@@ -493,7 +493,7 @@ class UserController extends Controller
         $user["parent"]= User::where('id',$user["user"]->parent_referral)->first();
 
         // first product purhcased
-        $productPurchase = ProductPurchase::with(['product'])->where('product_id', 1)->where('purchased_by', $user['user']->id)->first();
+        $productPurchase = ProductPurchase::with(['product', 'processed_by_user', 'transaction', 'transaction.mode_of_payment'])->where('product_id', 1)->where('purchased_by', $user['user']->id)->first();
         $user["payment_details"] = $productPurchase;
 
         return response()->json(['status' => true, 'user' => $user]);

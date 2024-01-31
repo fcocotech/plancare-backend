@@ -21,8 +21,12 @@ class ProductPurchase extends Model
         return $this->hasOne(Product::class, 'id', 'product_id');
     }
 
-    public function processed_by() {
-        return $this->hasOne(User::class, 'id', 'processed_by');
+    public function processed_by_user() {
+        return $this->hasOne(User::class, 'id', 'processed_by')->select('id', 'name');
+    }
+
+    public function transaction() {
+        return $this->hasOne(Transaction::class, 'id', 'transaction_id');
     }
 
     public function referrer_user() {
