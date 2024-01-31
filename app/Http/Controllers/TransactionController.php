@@ -389,12 +389,8 @@ class TransactionController extends Controller
             if($clearmembers!=null){
              //set transactions to withdrawable
                 foreach($clearmembers as $mem){
-                    // if($mem->cleared==1){
-                        $trans=$this->checkDownWithdrawableAmount($mem->id,$trans);
-                    // }
+                    $trans=$this->checkDownWithdrawableAmount($mem->id,$trans);
                 }
-                // $members=[];
-                // $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
             }
             $members=[];
             $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
