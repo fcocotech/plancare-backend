@@ -89,7 +89,8 @@ class TransactionController extends Controller
             DB::commit();
             return [
                 "status" => true,
-                "message" => 'Transaction complete'
+                "message" => 'Transaction complete',
+                "id" => $transaction->id,
             ];
         }catch(Exception $e){
             DB::rollback();
@@ -151,9 +152,11 @@ class TransactionController extends Controller
                         $payment_for->update();
 
                         $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
-                        $product = Product::where('id',$productPurchase->product_id)->first();;
+                        $product = Product::where('id',$productPurchase->product_id)->first();
                         if($productPurchase){
                             $productPurchase->status = '1';
+                            $productPurchase->processed_by = $user->id;
+                            $productPurchase->transaction_id = $transaction['id'];
                             $productPurchase->update();
                         }
 
