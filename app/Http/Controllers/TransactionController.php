@@ -151,9 +151,10 @@ class TransactionController extends Controller
                         $payment_for->update();
 
                         $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
-                        $product = Product::where('id',$productPurchase->product_id)->first();;
+                        $product = Product::where('id',$productPurchase->product_id)->first();
                         if($productPurchase){
                             $productPurchase->status = '1';
+                            $productPurchase->processed_by = $user->id;
                             $productPurchase->update();
                         }
 
