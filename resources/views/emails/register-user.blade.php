@@ -422,7 +422,14 @@
         text-shadow: none !important;
       }
     }
-    
+    .btn{
+      background-color:#324ca8;
+      padding:8px;
+
+    }
+    a.btn{
+      color:#fff;
+    }
     :root {
       color-scheme: light dark;
       supported-color-schemes: light dark;
@@ -470,9 +477,10 @@
                         <p>Account Name: Plancare Ph Inc.</p>
                         <br>
                         <h4>Gcash</h4>
-                        <p>Number: 09151501050</p>
-                        <p>Account Name: DA****B L.</p>
-                        
+                        <p>Number: 0969 501 0007</p>
+                        <p>Account Name: HY****O, S.</p>
+                        <p>For more payment options, don't hesitate to ask out team.</p><br>
+                        <a class="btn" href="https://web.facebook.com/profile.php?id=61552906381709">Click Here</a>
                         <p>If you did not create an account, please ignore this email or <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a> if you have questions.</p>
                         <p>Thanks,
                           <br>The Plancare PH team</p>
@@ -490,7 +498,7 @@
                   <tr>
                     <td class="content-cell" align="center">
                       <p class="f-fallback sub align-center">
-                       © Plancare PH 2023
+                       © Plancare PH 2024
                       </p>
                     </td>
                   </tr>
