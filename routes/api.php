@@ -24,10 +24,14 @@ Route::get('/verify-email/{token}', 'App\Http\Controllers\UserController@emailVe
 
 //Password
 Route::post('/forgot-password', 'App\Http\Controllers\ForgotPasswordController@forgotPassword')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
+Route::post('/forgot-password/password-update', 'App\Http\Controllers\ForgotPasswordController@passwordUpdate')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::get('/forgot-password/otp/generate/{token}', 'App\Http\Controllers\UserOtpController@forgotPasswordGenerateOTP')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
+Route::post('/forgot-password/otp/verify', 'App\Http\Controllers\UserOtpController@verifyOTP')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/your-protected-route', function(){
