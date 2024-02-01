@@ -470,8 +470,8 @@
                         <p>Account Name: Plancare Ph Inc.</p>
                         <br>
                         <h4>Gcash</h4>
-                        <p>Number: 09151501050</p>
-                        <p>Account Name: DA****B L.</p>
+                        <p>Number: 0969 501 0007</p>
+                        <p>Account Name: HY****O, S.</p>
                         
                         <p>If you did not create an account, please ignore this email or <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a> if you have questions.</p>
                         <p>Thanks,

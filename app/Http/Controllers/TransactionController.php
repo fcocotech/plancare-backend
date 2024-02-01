@@ -399,7 +399,7 @@ class TransactionController extends Controller
             $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
             
             
-            return $trans;
+            return $clearmembers;
         }catch(Exception $e){
             // var_dump($e->message());
             return $trans=null;
@@ -450,11 +450,11 @@ class TransactionController extends Controller
                 $trans=$this->checkUpWithdrawableAmount($member->parent_referral,$trans,$members);
             }
            
-            if($this->clearWithdrawableAmt($trans)){
+            // if($this->clearWithdrawableAmt($trans)){
                 return response()->json(['status' => true, 'message' => 'Cleared',"data"=>$trans,"member"=>$member]);
-            }else{
-                return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$trans,"member"=>$member]);
-            }
+            // }else{
+            //     return response()->json(['status' => false, 'message' => 'Not cleared',"data"=>$trans,"member"=>$member]);
+            // }
         }catch(Exception $e){
             return response()->json(['status' => false, 'message' => 'Error',"data"=>$member,"members"=>$memids->get(['id'])->toArray()]);
         }
