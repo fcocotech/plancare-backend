@@ -344,7 +344,7 @@ class TransactionController extends Controller
 
                     $clear_member=User::select('id')->where('parent_referral',$user->id)->where('status',1)->get();
                     if($clear_member!=null){
-                        // print("cleared: ".$clear_member);
+                        print("cleared: ".$clear_member);
                         array_push($members,$clear_member);
                     }
                     // print_r($members);
@@ -353,9 +353,9 @@ class TransactionController extends Controller
                         foreach($members as $mem){
                             // print("members:".$mem);
                             foreach($mem as $ind){
-                                // $transid=Transaction::where('user_id',$user->id)->where('commission_from',$ind->id)->where('cleared',1)->where('withdrawable',0)->get(['id','user_id','commission_from','amount']);
-                                Transaction::where('user_id',$user->id)->where('commission_from',$ind->id)->where('cleared',1)->where('withdrawable',0)->update(["withdrawable"=>1]);
-                                // print("transactions:".$transid);
+                                $transid=Transaction::where('user_id',$user->id)->where('commission_from',$ind->id)->where('cleared',1)->where('withdrawable',0)->get(['id','user_id','commission_from','amount']);
+                                // Transaction::where('user_id',$user->id)->where('commission_from',$ind->id)->where('cleared',1)->where('withdrawable',0)->update(["withdrawable"=>1]);
+                                print("transactions:".$transid);
                                 // // if($transid!=null){
                                 //     array_push($trans,$transid);
                                 // // }
