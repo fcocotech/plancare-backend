@@ -408,13 +408,16 @@ class TransactionController extends Controller
                     if(count($mem->clearedmembers)==0){
                         // print("no cleared members: ". $mem->id);
                         $members=[];
-                        $status=$this->checkUpWithdrawableAmount($mem->id,$trans,$members);
+                        $trans=$this->checkUpWithdrawableAmount($mem->id,$trans,$members);
                         // array_push($trans,$transnew);
                     }else{
                         // print("Has cleared members: ".$mem->id);
                         $this->checkDownWithdrawableAmount($mem->id,$trans);
                     }
                 }
+            }else{
+                $members=[];
+                        $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
             }
             // print("last clear:" . $lastclear);
             // $members=[];
