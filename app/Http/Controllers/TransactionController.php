@@ -340,7 +340,7 @@ class TransactionController extends Controller
             $clear_member=[];
             //Navigate Up (to parents)
             if($user->id!=1){
-                if($user["parent"]->cleared==1){
+                if($user["parent"]->cleared==1&& $user->cleared==1){
 
                     $clear_member=User::select('id')->where('parent_referral',$user->id)->where('status',1)->get();
                     if($clear_member!=null){
@@ -416,6 +416,7 @@ class TransactionController extends Controller
                     }
                 }
             }else{
+                
                 $members=[];
                 // print("no cleared members: ". $parentid);
                 $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
