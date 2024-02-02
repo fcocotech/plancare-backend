@@ -344,7 +344,7 @@ class TransactionController extends Controller
 
                     $clear_member=User::select('id')->where('parent_referral',$user->id)->where('status',1)->get();
                     if($clear_member!=null){
-                        print("cleared: ".$clear_member);
+                        // print("cleared: ".$clear_member);
                         array_push($members,$clear_member);
                     }
                     // print_r($members);

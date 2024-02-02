@@ -303,15 +303,26 @@ class UserController extends Controller
                 $user->delete();
             }
             // $user->status= 3;//account deactivated
-            Transaction::where('commission_from',$request->id)->where("trans_type",2)->update(['cleared'=>0,'withdrawable'=>0]);
-            Transaction::where('commission_from',$request->id)->where("trans_type",2)->delete();
+            Transaction::where('commission_from',$user->id)->where("trans_type",2)->update(['cleared'=>0,'withdrawable'=>0]);
+            Transaction::where('commission_from',$user->id)->where("trans_type",2)->delete();
             // $user->delete();
 
             $parent=User::find($user->parent_referral);
+            
             if($parent!=null){
                 if($this->findChildCount($parent->id)<3){
                         $parent->cleared =0;
                         $parent->update();
+                        print("clear".$parent->id);
+                        $members = User::where('parent_referral',$parent->id)->where('status',1)->get();
+                        foreach($members as $mem){
+                            print("revert".$mem->id);
+                            Transaction::where('user_id',$parent->id)->where('commission_from',$mem->id)->where("trans_type",2)->where('withdrawable',1)->update(['withdrawable'=>0]);
+                        }
+                        // $parenttrans =  Transaction::where('user_id',$parent->id)->where("trans_type",2)->where('withdrawable',1)-get(['id']);
+                        // if(count($parenttrans)!=0){
+                            
+                        // }
                 }
             }
             DB::commit();
