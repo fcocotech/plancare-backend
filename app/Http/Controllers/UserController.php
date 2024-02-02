@@ -496,6 +496,29 @@ class UserController extends Controller
         $productPurchase = ProductPurchase::with(['product', 'processed_by_user', 'transaction', 'transaction.mode_of_payment'])->where('product_id', 1)->where('purchased_by', $user['user']->id)->first();
         $user["payment_details"] = $productPurchase;
 
+        // check if null product_purchase
+        if($productPurchase){
+            $productPurchase = ProductPurchase::with(['product'])->where('product_id', 1)->where('purchased_by', $user['user']->id)->orderBy('created_at', 'ASC')->first();
+            
+            // check again if null then proceed transactions
+            if($productPurchase){
+                $transaction = Transaction::with(['mode_of_payment'])->where('user_id', $productPurchase->purchased_by)
+                ->where('trans_type', 1)
+                ->where('processed_by', 1)
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+                if($transaction){
+                    $productPurchase->processed_by = $transaction->processed_by;
+                    $productPurchase->processed_by_user = User::select('id', 'name')->where('id', $transaction->processed_by)->first();
+                }
+
+                $productPurchase->transaction = $transaction;
+
+                $user["payment_details"] = $productPurchase;
+            }
+        }
+
         return response()->json(['status' => true, 'user' => $user]);
     }
 
