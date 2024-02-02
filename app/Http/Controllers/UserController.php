@@ -402,7 +402,7 @@ class UserController extends Controller
     public function teams(Request $request){
         $user = Auth::user();
         
-        $leader = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('referral_code', $user->referral_code)->first();
+        $leader = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('referral_code', $user->referral_code)->first();
         $members=array("members"=>[],"count"=>0);
         $members=$this->getInnerMembers($leader->id,$members);
        
@@ -415,7 +415,7 @@ class UserController extends Controller
     
     protected function getInnerMembers($parentid,$innermembers){
 
-        $members = User::select('id', 'name', 'email', 'profile_url','referral_code')->where('parent_referral', $parentid)->where('status', '1')->get();
+        $members = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('parent_referral', $parentid)->where('status', '1')->get();
         if($members!=null){
             
             if($members!=null){
