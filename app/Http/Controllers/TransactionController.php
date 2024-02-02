@@ -177,8 +177,8 @@ class TransactionController extends Controller
                             $members=[];
                             $trans=$this->checkUpWithdrawableAmount($payment_for->parent_referral,$trans,$members);
                         }
-                        if($this->clearWithdrawableAmt($trans)){
-                        }
+                        // if($this->clearWithdrawableAmt($trans)){
+                        // }
                         
                         //send email confirmation
                         $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
@@ -353,9 +353,9 @@ class TransactionController extends Controller
                         foreach($members as $mem){
                             // print("members:".$mem);
                             foreach($mem as $ind){
-                                $transid=Transaction::where('user_id',$user->id)->where('commission_from',$ind->id)->where('cleared',1)->where('withdrawable',0)->get(['id','user_id','commission_from','amount']);
-                                // Transaction::where('user_id',$user->id)->where('commission_from',$ind->id)->where('cleared',1)->where('withdrawable',0)->update(["withdrawable"=>1]);
-                                print("transactions:".$transid);
+                                // $transid=Transaction::where('user_id',$user->id)->where('commission_from',$ind->id)->where('cleared',1)->where('withdrawable',0)->get(['id','user_id','commission_from','amount']);
+                                Transaction::where('user_id',$user->id)->where('commission_from',$ind->id)->where('cleared',1)->where('withdrawable',0)->update(["withdrawable"=>1]);
+                                // print("transactions:".$transid);
                                 // // if($transid!=null){
                                 //     array_push($trans,$transid);
                                 // // }
@@ -394,9 +394,9 @@ class TransactionController extends Controller
             $clearmembers = User::with("clearedmembers")->where('parent_referral',$parentid)->where('status',1)->where('cleared',1)->get();
             $lastclear=null;
             $status=true;
-            if(!empty($clearmembers)){
+            if(count($clearmembers)!=0){
              //set transactions to withdrawable
-             
+            //  print("Has cleared members: ". $clearmembers);
                 foreach($clearmembers as $mem){
 
                     // print(count($mem->clearedmembers));
@@ -417,14 +417,15 @@ class TransactionController extends Controller
                 }
             }else{
                 $members=[];
-                        $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
+                // print("no cleared members: ". $parentid);
+                $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
             }
             // print("last clear:" . $lastclear);
             // $members=[];
             // $trans=$this->checkUpWithdrawableAmount($parentid,$trans,$members);
             
             
-            return $status;
+            return $trans;
         }catch(Exception $e){
             // var_dump($e->message());
             return false;
