@@ -31,12 +31,14 @@ class TransactionController extends Controller
             // $earnings = UserCommission::where('user_id', $user->id)->get();
             $cleared = Transaction::with(['commission_from'])->where('trans_type', '2')->where('cleared',1)->sum('amount');
             $withdrawable = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1)->get();
+            $withdrawal_request = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
             $total_earnings = $earnings->sum('amount');
         }else{
             $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
             $cleared = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->sum('amount');
             $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
+            $withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
             $total_earnings = $earnings->sum('amount');
         }
         return response()->json([
@@ -44,7 +46,8 @@ class TransactionController extends Controller
             'earnings' => $earnings,
             'cleared' => $cleared,
             'total_earnings' => $total_earnings,
-            'total_withdrawable'=>$withdrawable->sum('amount')
+            'withdrawal_request'=>$withdrawal_request->sum('amount'),
+            'total_withdrawable'=>$withdrawable->sum('amount')-$withdrawal_request->sum('amount')
         ]);
     }
 
@@ -508,13 +511,13 @@ class TransactionController extends Controller
             $data = [
                 'user_id' => $user->id,
                 'amount' => $request->points_to_withdraw,
-                'type'=> 2, // commission
+                'type'=> 3, // Withdrawal Request
                 'processed_by' => $user->id,
                 'payment_method' => $request->withdrawal_method,
                 'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
-                'description' => 'Earnings Withdrawal',
+                'description' => 'Withdrawal Request',
                 'status' => 2,
-                'proof_url' => '',
+                'proof_url' => null,
                 'withdrawable' => 2, // 2 - pending, 3 - in progress, 4 - released, 5 - cancelled
             ];
 

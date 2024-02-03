@@ -16,8 +16,8 @@ class WithdrawalAccountTypeSeeder extends Seeder
         WithdrawalAccountType::truncate();
 
         $accounts = [
-            ['name' => 'Cash'],
-            ['name' => 'Bank Transfer'],
+            ['name' => 'Cash Pickup'],
+            ['name' => 'Bank Transfer/Deposit'],
             ['name' => 'E-Wallet'],
             ['name' => 'Payment Centers'],
             ['name' => 'Other'],

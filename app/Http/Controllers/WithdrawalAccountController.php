@@ -19,6 +19,8 @@ class WithdrawalAccountController extends Controller
             $accounts[$key]['code'] = $withdrawalAccount->type;
             $accounts[$key]['name'] = $withdrawalAccount->types->name;
         }
+        // $default=array('code'=>1,'name'=>'Cash Pickup');
+        // $accounts=array_merge($accounts,$default);
         return response()->json(['status' => true, 'accounts' => $accounts]);
     }
 
