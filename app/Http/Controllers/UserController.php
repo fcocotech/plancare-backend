@@ -313,11 +313,11 @@ class UserController extends Controller
                 if($this->findChildCount($parent->id)<3){
                         $parent->cleared =0;
                         $parent->update();
-                        print("clear".$parent->id);
+                        // print("clear".$parent->id);
                         $members = User::where('parent_referral',$parent->id)->where('status',1)->get(['id']);
 
                         foreach($members as $mem){
-                            print("revert".$mem->id);
+                            // print("revert".$mem->id);
                             $this->revertParentTransaction($parent->id,$mem->id);
                             // $trans = Transaction::where('user_id',$parent->id)->where('commission_from',$mem->id)->where("trans_type",2)->get();//->update(['withdrawable'=>0]);
                             // print("transid:".$trans);
@@ -338,7 +338,7 @@ class UserController extends Controller
     }
 
     protected function revertParentTransaction($userid,$memberid){
-
+        DB::beginTransaction();
         try{
         
             $user = User::find($userid);
@@ -347,9 +347,10 @@ class UserController extends Controller
             if($user->parent_referral !=1){
                 $this->revertParentTransaction($user->parent_referral,$memberid);
             }
-
+            DB::commit();
             return true;
         }catch(Exception $e){
+            DB::rollback();
             return false;
         }
 
