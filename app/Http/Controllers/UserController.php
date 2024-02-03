@@ -314,10 +314,13 @@ class UserController extends Controller
                         $parent->cleared =0;
                         $parent->update();
                         print("clear".$parent->id);
-                        $members = User::where('parent_referral',$parent->id)->where('status',1)->get();
+                        $members = User::where('parent_referral',$parent->id)->where('status',1)->get(['id']);
+
                         foreach($members as $mem){
                             print("revert".$mem->id);
-                            Transaction::where('user_id',$parent->id)->where('commission_from',$mem->id)->where("trans_type",2)->where('withdrawable',1)->update(['withdrawable'=>0]);
+                            $this->revertParentTransaction($parent->id,$mem->id);
+                            // $trans = Transaction::where('user_id',$parent->id)->where('commission_from',$mem->id)->where("trans_type",2)->get();//->update(['withdrawable'=>0]);
+                            // print("transid:".$trans);
                         }
                         // $parenttrans =  Transaction::where('user_id',$parent->id)->where("trans_type",2)->where('withdrawable',1)-get(['id']);
                         // if(count($parenttrans)!=0){
@@ -326,13 +329,32 @@ class UserController extends Controller
                 }
             }
             DB::commit();
-            return response()->json(['status' => true, 'user' => $user]);
+            return response()->json(['status' => true, 'user' => $members]);
         }catch(Exception $e){
             DB::rollback();
             return response()->json(['status' => false, 'user' => null]);
         }
         
     }
+
+    protected function revertParentTransaction($userid,$memberid){
+
+        try{
+        
+            $user = User::find($userid);
+            Transaction::where('user_id',$user->id)->where('commission_from',$memberid)->where("trans_type",2)->update(['withdrawable'=>0]);
+            
+            if($user->parent_referral !=1){
+                $this->revertParentTransaction($user->parent_referral,$memberid);
+            }
+
+            return true;
+        }catch(Exception $e){
+            return false;
+        }
+
+    }
+
     public function update(Request $request, $user_id) {
         try{
             $user = User::where('id', $user_id)->first();
