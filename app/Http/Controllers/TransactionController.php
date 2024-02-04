@@ -598,10 +598,10 @@ class TransactionController extends Controller
         }
     
         $transaction->withdrawable = $request->new_status;
-        $transaction_status = $request->new_status;
+        $transaction->status = $request->new_status;
         $transaction->update();
 
-        
+        $transaction_status="";
         $subject = "";
         $template = "";
         switch($request->new_status) {
