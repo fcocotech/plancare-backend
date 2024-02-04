@@ -57,7 +57,7 @@ class TransactionController extends Controller
         if($user->id == 1) {
             $withdrawals = Transaction::with(['user','mode_of_payment'])->whereIn('withdrawable', ['2','3','4','5'])->get();
         } else {
-            $withdrawals = Transaction::with(['user','mode_of_payment'])->where('user_id', '2')->whereIn('withdrawable', ['2','3','4','5'])->get();
+            $withdrawals = Transaction::with(['user','mode_of_payment'])->where('user_id', $user->id)->whereIn('withdrawable', ['2','3','4','5'])->get();
         }
 
         return response()->json([
@@ -598,9 +598,10 @@ class TransactionController extends Controller
         }
     
         $transaction->withdrawable = $request->new_status;
+        $transaction_status = $request->new_status;
         $transaction->update();
 
-        $transaction_status = "";
+        
         $subject = "";
         $template = "";
         switch($request->new_status) {
