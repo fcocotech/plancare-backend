@@ -568,6 +568,7 @@ class TransactionController extends Controller
         }
 
         $transaction->withdrawable = 5; // cancelled 
+        $transaction->status = 5;
         $transaction->update();
 
         Mail::send('emails.withdrawal-status.cancelled', [
@@ -581,7 +582,7 @@ class TransactionController extends Controller
             $message->to($user->email)->subject('You\'ve Cancelled Your Withdrawal Request with Transaction ID: '.$transaction->transaction_id);
         });
 
-        return response()->json(['status' => true, 'message' => 'Transaction: '.$request->transaction_id. ' was cancelled!']);
+        return response()->json(['status' => true,'amount_to_withdraw'=> $transaction->amount,'message' => 'Transaction: '.$request->transaction_id. ' was cancelled!']);
     }
 
     public function withdrawalRequestStatusUpdate(Request $request) {

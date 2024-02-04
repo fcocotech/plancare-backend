@@ -465,9 +465,11 @@
                         <p style="margin: 0;">Less: Admin Fee <b>{{$admin_fee}}</b></p>
                         <p><b>Total Amount to Receive: {{$amount_to_receive}}</b></p>
                         <p><b>Withdrawal Method: {{$withdrawal_method}}</b></p>
+                        <p>To account details:</p><br>
+
                         <!-- Action -->
                         <!-- (You may include additional details or action steps if needed) -->
-
+                        <p>Pls. be informed that processing will take 3-5 business days. You will receive an email notification once the request has been released.</p>
                         <p>If you have any questions or concerns regarding your withdrawal, please feel free to contact us at <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
                         <p>Thank you for your understanding.
                             <br>The Plancare PH team</p>
