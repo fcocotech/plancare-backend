@@ -524,6 +524,7 @@ class TransactionController extends Controller
             //make transaction
             $transaction = self::create($data);
 
+            $withdraw_account_details = WithdrawalAccount::where('user_id', $user->id)->where('type', $request->withdrawal_method)->first();
             $mode_of_payment = WithdrawalAccountType::where('id', $request->withdrawal_method)->first();
 
             Mail::send('emails.withdrawal-status.in-progress', [
@@ -533,6 +534,7 @@ class TransactionController extends Controller
                 'admin_fee' => 50.00,
                 'amount_to_receive' => ($data['amount'] - 50),
                 'withdrawal_method' => $mode_of_payment->name ?? '--',
+                'withdraw_account_details' => $withdraw_account_details
             ], function ($message) use ($user, $data) {
                 $message->to($user->email)->subject('Your Withdrawal Request is In Progress with Transaction ID: '.$data['transaction_id']);
             });
@@ -587,12 +589,14 @@ class TransactionController extends Controller
 
     public function withdrawalRequestStatusUpdate(Request $request) {
 
-        $transaction = Transaction::with(['user', 'mode_of_payment'])->where('transaction_id', $request->transaction_id)->first();
+        $transaction = Transaction::with(['user', 'user.withdrawal_accounts', 'mode_of_payment'])->where('transaction_id', $request->transaction_id)->first();
         if(!$transaction){
             return response()->json(['status' => false, 'message' => 'Transaction not valid!']);
         }
         
         $transaction_user = $transaction->user;
+
+        $withdraw_account_details = WithdrawalAccount::where('user_id', $transaction_user->id)->where('type', $transaction->payment_method)->first();
 
         if(!in_array($request->new_status, [2, 3, 4, 5])) {
             return response()->json(['status' => false, 'message' => 'Status not valid!']);
@@ -637,6 +641,7 @@ class TransactionController extends Controller
             'admin_fee' => 50.00,
             'amount_to_receive' => ($transaction->amount - 50),
             'withdrawal_method' => $transaction->mode_of_payment->name ?? '--',
+            'withdraw_account_details' => $withdraw_account_details,
         ], function ($message) use ($transaction_user, $subject) {
             $message->to($transaction_user->email)->subject($subject);
         });

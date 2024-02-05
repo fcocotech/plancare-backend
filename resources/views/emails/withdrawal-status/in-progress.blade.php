@@ -465,7 +465,12 @@
                         <p style="margin: 0;">Less: Admin Fee <b>{{$admin_fee}}</b></p>
                         <p><b>Total Amount to Receive: {{$amount_to_receive}}</b></p>
                         <p><b>Withdrawal Method: {{$withdrawal_method}}</b></p>
-                        <p>To account details:</p><br>
+                        @if($withdraw_account_details)
+                          <p>To account details:</p>
+                          <p style="margin: 0;">Bank Name: <b>{{ $withdraw_account_details->bank_name }}</b></p>
+                          <p style="margin: 0;">Account Name: <b>{{ $withdraw_account_details->account_name }}</b></p>
+                          <p style="margin: 0;">Account Number: <b>{{ $withdraw_account_details->account_number }}</b></p><br>
+                        @endif
 
                         <!-- Action -->
                         <!-- (You may include additional details or action steps if needed) -->

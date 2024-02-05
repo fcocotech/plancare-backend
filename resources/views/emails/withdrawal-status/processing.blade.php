@@ -465,6 +465,12 @@
                         <p style="margin: 0;">Less: Admin Fee <b>{{$admin_fee}}</b></p>
                         <p><b>Total Amount to Receive: {{$amount_to_receive}}</b></p>
                         <p>Withdrawal Method: <b>{{$withdrawal_method}}</b></p>
+                        @if($withdraw_account_details)
+                          <p>To account details:</p>
+                          <p style="margin: 0;">Bank Name: <b>{{ $withdraw_account_details->bank_name }}</b></p>
+                          <p style="margin: 0;">Account Name: <b>{{ $withdraw_account_details->account_name }}</b></p>
+                          <p style="margin: 0;">Account Number: <b>{{ $withdraw_account_details->account_number }}</b></p><br>
+                        @endif
                         <!-- Action -->
                         <p>Please be advised that the processing will take 3-5 business days.</p>
                         <p>If you did not make this withdrawal please contact <a href="mailto:plancareph@gmail.com">plancareph@gmail.com</a>.</p>
