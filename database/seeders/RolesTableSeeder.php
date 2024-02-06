@@ -16,8 +16,9 @@ class RolesTableSeeder extends Seeder
         Role::truncate();
 
         $roles = [
-            ['name' => 'Admin',   'module_ids' => '1,2,3,4,5,6,7,8,9'],
-            ['name' => 'Member',  'module_ids' => '1,2,3,4,6,8,9'],
+            ['name' => 'Admin',         'module_ids' => '1,2,3,4,5,6,7,8,9'],
+            ['name' => 'Member',        'module_ids' => '1,2,3,4,6,8,9'],
+            ['name' => 'Influencer',    'module_ids' => '1,2,3,4,6,8,9'],
         ];
         foreach ($roles as $role) {
             Role::create($role);

@@ -44,6 +44,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/user/{id}', 'App\Http\Controllers\UserController@getId');
     Route::get('/users/card-totals', 'App\Http\Controllers\UserController@getCardData');
     Route::post('/user/update/{user_id}', 'App\Http\Controllers\UserController@update');
+    Route::post('/user/update-user-roles', 'App\Http\Controllers\UserController@changeUserRole');
     Route::post('/user/updateuserstatus', 'App\Http\Controllers\UserController@updateUserStatus');
     Route::post('/user/checkcurrentpassword', 'App\Http\Controllers\UserController@checkCurrentPassword');
     Route::post('/user/update-user-referrer', 'App\Http\Controllers\UserController@changeReferrerId');

@@ -521,7 +521,7 @@ class UserController extends Controller
 
     public function getId(Request $request, $id) {
         $user = array("user"=>User::select(
-            'id','name','email','birthdate','nationality','address','city','zipcode','mobile_number','referral_code','profile_url','status','parent_referral'
+            'id','name','email','birthdate','nationality','address','city','zipcode','mobile_number','referral_code','profile_url','status','parent_referral','role_id'
         )->where('id', $id)->first(),"parent"=>null);
         
         $user["parent"]= User::where('id',$user["user"]->parent_referral)->first();
@@ -567,4 +567,15 @@ class UserController extends Controller
             return response()->json(['status' => false]);
         }
     }
+
+    public function changeUserRole(Request $request) {
+        try {
+            $user = User::where('id', $request->user_id)->first();
+            $user->role_id = $request->role_id;
+            $user->update();
+            return response()->json(['status' => true, 'message' => 'Update Successful']);
+        } catch (\Exception $e){
+            return response()->json(['status' => false]);
+        }
+    }   
 }
