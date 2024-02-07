@@ -470,8 +470,8 @@ class UserController extends Controller
     }
 
     public function team(Request $request, $user_id){        
-        $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared')->where('id', $user_id)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared')->where('parent_referral', $leader->id)->where('status', '1')->get();
+        $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('id', $user_id)->first();
+        $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('parent_referral', $leader->id)->where('status', '1')->get();
         
         $leader->members_count = count($members);
 
@@ -482,7 +482,10 @@ class UserController extends Controller
             }
         }
 
-        $leader->members = $members;
+        $leader->members = [];
+        if($leader->role_id != 3){ // not influencer role
+            $leader->members = $members;
+        }
 
         return response()->json(['status' => true, 'team' => $leader]);
     }
