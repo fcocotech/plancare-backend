@@ -114,7 +114,7 @@ class TransactionController extends Controller
             // }else{
                 $user = Auth::user();
                 $cleared=0;
-                $payment_for = User::where('id',$request->id)->where('status',2)->first();//get the user info of the member
+                $payment_for = User::with('parent')->where('id',$request->id)->where('status',2)->first();//get the user info of the member
                 //double check for member count
                 if($this->findChildCount($payment_for->parent_referral)>=4){
                     return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
@@ -166,7 +166,12 @@ class TransactionController extends Controller
                         //check if parent has 3 members already
                         $clearedparents=$this->clearParents($payment_for->parent_referral);
                         // commission distribution
-                        $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
+                        if($payment_for['parent']->role_id==3){
+                            $this->assignCommission($payment_for,$payment_for->id,0.2,$request->amount);
+                        }else{
+                            $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
+                        }
+                        
                         //clear transactions
                         //get other members of parent id
                         $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
@@ -271,10 +276,12 @@ class TransactionController extends Controller
                                 
                     // DB::commit();
                     //recursive function to crawl to members.
-                    if($comm_rate==0.3){
-                        return $this->assignCommission($parent,$newmemberid,0.1,$amt);
-                    }else{
-                        return $this->assignCommission($parent,$newmemberid,$comm_rate/2,$amt);
+                    if($payment_for['parent']->role_id!=3){
+                        if($comm_rate==0.3){
+                            return $this->assignCommission($parent,$newmemberid,0.1,$amt);
+                        }else{
+                            return $this->assignCommission($parent,$newmemberid,$comm_rate/2,$amt);
+                        }
                     }
                     return true;
                 }else{
