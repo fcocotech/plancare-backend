@@ -48,7 +48,7 @@ class UserController extends Controller
     }
 
     public function get(Request $request) {
-        $users = array("profile"=>User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','rf.name','rf.referral_code as referredby','users.cleared')
+        $users = array("profile"=>User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
         ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
         ->selectRaw('(SELECT p.name FROM product_purchases pp
                         LEFT JOIN products p ON pp.product_id = p.id
