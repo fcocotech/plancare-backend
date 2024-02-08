@@ -34,7 +34,7 @@ class AuthController extends Controller
         $credentials = ['referral_code' => $username, 'password' => $password, 'status' => 1];
 
         // Attempt to authenticate the user
-        if (Auth::attempt($request->only('referral_code', 'password')) && RateLimiter::availableIn('lock-username:' . $request->username) > 0) {
+        if (Auth::attempt($credentials) && RateLimiter::availableIn('lock-username:' . $request->username) < 1) {
             // If authentication was successful, generate a token for the user
             $user = Auth::user();
             $referral_code = $user->referral_code;
@@ -98,14 +98,9 @@ class AuthController extends Controller
         }
         
         // Increment login attempts if authentication fails
-        RateLimiter::hit($this->throttleKey($request), $decaySeconds);
+        // RateLimiter::hit($this->throttleKey($request), $decaySeconds);
 
         // If authentication failed for other reasons, return an error message
         return response()->json(['status' => false, 'message' => 'Invalid credentials'], 200);
-    }
-
-    protected function throttleKey(Request $request)
-    {
-        return \Str::lower($request->input('referral_code')) . '|' . $request->ip();
     }
 }
