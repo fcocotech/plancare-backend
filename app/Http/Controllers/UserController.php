@@ -80,6 +80,25 @@ class UserController extends Controller
         return response()->json(['status' => true, 'users' => $users["profile"], 'params' => $request->filter]);
     }
 
+    public function getInfluencers(Request $request) {
+        $users = array("profile"=>
+            User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
+            ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
+
+            ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
+            ->leftJoin('transactions as tr', function ($join) {
+                $join->on('tr.user_id', '=', 'users.id')
+                    ->where('tr.trans_type', '2')->where('tr.cleared', '1')->whereNull('tr.deleted_at');
+            })
+            ->where('users.is_admin', '!=', 1)
+            ->where('users.role_id', '=', 3)
+        );
+
+        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code','rf.name','users.cleared')->get();
+
+        return response()->json(['status' => true, 'users' => $users["profile"]]);
+    }
+
     public function getMembers(Request $request) {
 
         $users =User::select('users.id','users.name','users.email','users.referral_code','users.status')
