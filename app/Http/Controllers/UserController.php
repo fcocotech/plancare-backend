@@ -49,27 +49,29 @@ class UserController extends Controller
 
     public function get(Request $request) {
         $users = array("profile"=>User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
-        ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
-        ->selectRaw('(SELECT p.name FROM product_purchases pp
-                        LEFT JOIN products p ON pp.product_id = p.id
-                        WHERE pp.purchased_by = users.id
-                        ORDER BY pp.created_at ASC
-                        LIMIT 1) as product_name')
-        ->selectRaw('(SELECT p.price FROM product_purchases pp
-                        LEFT JOIN products p ON pp.product_id = p.id
-                        WHERE pp.purchased_by = users.id
-                        ORDER BY pp.created_at ASC
-                        LIMIT 1) as product_price')
-        ->selectRaw('(SELECT pp.id FROM product_purchases pp
-                        WHERE pp.purchased_by = users.id
-                    ) as product_purchase_id')
-        // ->selectRaw('(SELECT r.referral_code FROM users r WHERE r.id = users.parent_referral) sa referred_by')
-        ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
-        ->leftJoin('transactions as tr', function ($join) {
-            $join->on('tr.user_id', '=', 'users.id')
-                ->where('tr.trans_type', '2')->where('tr.cleared', '1')->whereNull('tr.deleted_at');
-        })
-        ->where('users.is_admin', '!=', 1));
+            ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
+            ->selectRaw('(SELECT p.name FROM product_purchases pp
+                            LEFT JOIN products p ON pp.product_id = p.id
+                            WHERE pp.purchased_by = users.id
+                            ORDER BY pp.created_at ASC
+                            LIMIT 1) as product_name')
+            ->selectRaw('(SELECT p.price FROM product_purchases pp
+                            LEFT JOIN products p ON pp.product_id = p.id
+                            WHERE pp.purchased_by = users.id
+                            ORDER BY pp.created_at ASC
+                            LIMIT 1) as product_price')
+            ->selectRaw('(SELECT pp.id FROM product_purchases pp
+                            WHERE pp.purchased_by = users.id
+                        ) as product_purchase_id')
+            // ->selectRaw('(SELECT r.referral_code FROM users r WHERE r.id = users.parent_referral) sa referred_by')
+            ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
+            ->leftJoin('transactions as tr', function ($join) {
+                $join->on('tr.user_id', '=', 'users.id')
+                    ->where('tr.trans_type', '2')->where('tr.cleared', '1')->whereNull('tr.deleted_at');
+            })
+            ->where('users.is_admin', '!=', 1)
+            ->where('users.role_id', '!=', 3)
+        );
 
         if ($request->filter!=null) {
            $users["profile"]->where('users.status', $request->filter);//gets all active user
@@ -157,6 +159,73 @@ class UserController extends Controller
 
     
 
+    public function createInfluencer(Request $request) {
+        $product_id = 1;
+        $parent_id = '10011'; // assigned to admin
+
+        $referrerUser = User::where('referral_code', $parent_id)->orWhere('id', 1)->where('status', 1)->first();
+
+        $user = new User;
+        $user->address = $request->address;
+        $user->birthdate = $request->birthdate;
+        $user->city = $request->city;
+        $user->zipcode = $request->zipcode;
+        $user->email            = $request->email;
+        $user->idtype           = $request->idtype;
+        $user->mobile_number    = $request->mobile_number;
+        $user->name             = $request->name;
+        $user->nationality      = $request->nationality;
+        $user->sec_q1           = $request->sec_q1;
+        $user->sec_q1_ans       = $request->sec_q1_ans;
+        $user->sec_q2           = $request->sec_q2;
+        $user->sec_q2_ans       = $request->sec_q2_ans;
+        $user->sec_q3           = $request->sec_q3;
+        $user->sec_q3_ans       = $request->sec_q3_ans;
+        $user->parent_referral  = $referrerUser->id; //$referrerUser->referral_code;//assign parent referral code
+        $user->referral_code    = $this->generateReferralCode($user->id, $product_id, $referrerUser->id);
+        $user->status           = 2; //assign as pending
+        $user->password         = Hash::make($request->password);
+        $user->reference_code   = 0;
+        $user->cleared          = false;
+        $user->role_id          = 3; // Influencer role
+        if($request->photoprofile == null || $request->photoprofile ==""){
+            $request->photoprofile ==  "person.png";
+        }
+        $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoprofile));
+        $profile_path = storage_path('app/public/images/profiles/');
+        if(!File::isDirectory($profile_path)){
+            File::makeDirectory($profile_path, 0777, true, true);
+        }
+        $profile_name = time().'_'.$user->id.'_profile.png';
+        file_put_contents($profile_path.$profile_name, $profile_image);
+        $user->profile_url = env('APP_URL', '') . '/storage/images/profiles/'.$profile_name;
+
+        $id_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoid));
+        $id_path = storage_path('app/public/images/ids/');
+        if(!File::isDirectory($id_path)){
+            File::makeDirectory($id_path, 0777, true, true);
+        }
+        $id_name = time().'_'.$user->id.'_id.png';
+        file_put_contents($id_path.$id_name, $id_image);
+        $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
+
+        //Add product purchase
+        $user->save();
+        $productPurchase                = new ProductPurchase;
+        $productPurchase->product_id    = $product_id; //for now just 1 product
+        $productPurchase->purchased_by  = $user->id;
+        $productPurchase->referrer_id   = $referrerUser->id ?? 0;
+
+        $productPurchase->save();
+
+        $user->referral_code = $this->generateReferralCode($user->id, $product_id, $referrerUser->id);
+        $user->update();
+        $this->sendEmailVerification($user);
+        $this->sendWelcomeEmail($user);
+        
+        return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase]);
+    }
+
     public function create(Request $request) { 
         //email can be duplicate
         // $existingUser = User::where('email', $request->email)->get();
@@ -226,7 +295,7 @@ class UserController extends Controller
         $user->sec_q2_ans       = $request->sec_q2_ans;
         $user->sec_q3           = $request->sec_q3;
         $user->sec_q3_ans       = $request->sec_q3_ans;
-        $user->parent_referral    = $referrerUser->id;//$referrerUser->referral_code;//assign parent referral code
+        $user->parent_referral  = $referrerUser->id;//$referrerUser->referral_code;//assign parent referral code
         $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
         $user->status           = 2;//assign as pending
         $user->password = Hash::make($request->password);
@@ -267,7 +336,7 @@ class UserController extends Controller
         $this->sendEmailVerification($user);
         $this->sendWelcomeEmail($user);
         
-        return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase,'debugger' => $this->debugger]);
+        return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase]);
        
     }
 

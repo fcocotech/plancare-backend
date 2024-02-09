@@ -18,6 +18,7 @@ Route::post('/login', 'App\Http\Controllers\AuthController@login')->withoutMiddl
 // Security Question  
 Route::get('/security-questions/get-all', 'App\Http\Controllers\SecurityQuestionController@get')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 Route::post('/register/user', 'App\Http\Controllers\UserController@create')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
+Route::post('/register/influencer', 'App\Http\Controllers\UserController@createInfluencer')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 
 // User
 Route::get('/verify-email/{token}', 'App\Http\Controllers\UserController@emailVerify')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
