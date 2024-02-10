@@ -48,7 +48,7 @@ class UserController extends Controller
     }
 
     public function get(Request $request) {
-        $users = array("profile"=>User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
+        $users = array("profile"=>User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
             ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
             ->selectRaw('(SELECT p.name FROM product_purchases pp
                             LEFT JOIN products p ON pp.product_id = p.id
@@ -77,14 +77,14 @@ class UserController extends Controller
            $users["profile"]->where('users.status', $request->filter);//gets all active user
         }
 
-        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code','rf.name','users.cleared')->get();
+        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.referral_code','rf.name','users.cleared')->get();
 
         return response()->json(['status' => true, 'users' => $users["profile"], 'params' => $request->filter]);
     }
 
     public function getInfluencers(Request $request) {
         $users = array("profile"=>
-            User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
+            User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
             ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
 
             ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
@@ -96,7 +96,7 @@ class UserController extends Controller
             ->where('users.role_id', '=', 3)
         );
 
-        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','rf.referral_code','rf.name','users.cleared')->get();
+        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.referral_code','rf.name','users.cleared')->get();
 
         return response()->json(['status' => true, 'users' => $users["profile"]]);
     }
@@ -378,6 +378,18 @@ class UserController extends Controller
         });
     }
 
+    public function approveInfluencer(Request $request){
+        DB::beginTransaction();
+        try{
+            $user = User::where('id', $request->id)->first();
+            $user->update(["status"=>1]);
+            DB::commit();
+            return response()->json(['status' => true]);
+        }catch(Exception $e){
+            DB::rollback();
+            return response()->json(['status' => false]);
+        }
+    }
     public function updateUserStatus(Request $request){
         DB::beginTransaction();
         try{
@@ -390,34 +402,30 @@ class UserController extends Controller
             }else{
                 $user->delete();
             }
-            // $user->status= 3;//account deactivated
+        
             Transaction::where('commission_from',$user->id)->where("trans_type",2)->update(['cleared'=>0,'withdrawable'=>0]);
             Transaction::where('commission_from',$user->id)->where("trans_type",2)->delete();
-            // $user->delete();
-
-            $parent=User::find($user->parent_referral);
+        
+            if($user->role_id!=3){//if not an influencer
+                $parent=User::find($user->parent_referral);
             
-            if($parent!=null){
-                if($this->findChildCount($parent->id)<3){
-                        $parent->cleared =0;
-                        $parent->update();
-                        // print("clear".$parent->id);
-                        $members = User::where('parent_referral',$parent->id)->where('status',1)->get(['id']);
-
-                        foreach($members as $mem){
-                            // print("revert".$mem->id);
-                            $this->revertParentTransaction($parent->id,$mem->id);
-                            // $trans = Transaction::where('user_id',$parent->id)->where('commission_from',$mem->id)->where("trans_type",2)->get();//->update(['withdrawable'=>0]);
-                            // print("transid:".$trans);
-                        }
-                        // $parenttrans =  Transaction::where('user_id',$parent->id)->where("trans_type",2)->where('withdrawable',1)-get(['id']);
-                        // if(count($parenttrans)!=0){
-                            
-                        // }
+                if($parent!=null){
+                    if($this->findChildCount($parent->id)<3){
+                            $parent->cleared =0;
+                            $parent->update();
+                            // print("clear".$parent->id);
+                            $members = User::where('parent_referral',$parent->id)->where('status',1)->get(['id']);
+                            foreach($members as $mem){
+                                // print("revert".$mem->id);
+                                $this->revertParentTransaction($parent->id,$mem->id);
+                             }
+                        
+                    }
                 }
             }
+           
             DB::commit();
-            return response()->json(['status' => true, 'user' => $members]);
+            return response()->json(['status' => true, 'user' => null]);
         }catch(Exception $e){
             DB::rollback();
             return response()->json(['status' => false, 'user' => null]);

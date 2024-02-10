@@ -116,8 +116,10 @@ class TransactionController extends Controller
                 $cleared=0;
                 $payment_for = User::with('parent')->where('id',$request->id)->where('status',2)->first();//get the user info of the member
                 //double check for member count
-                if($this->findChildCount($payment_for->parent_referral)>=4){
-                    return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
+                if($payment_for['parent']->role_id!=3){
+                    if($this->findChildCount($payment_for->parent_referral)>=4){
+                        return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
+                    }
                 }
                
                 if($payment_for) {
@@ -164,11 +166,13 @@ class TransactionController extends Controller
                         }
 
                         //check if parent has 3 members already
-                        $clearedparents=$this->clearParents($payment_for->parent_referral);
+                        
                         // commission distribution
                         if($payment_for['parent']->role_id==3){
                             $this->assignCommission($payment_for,$payment_for->id,0.2,$request->amount);
+                            $this->clearInfluencerTrans($payment_for["parent"]->id,$payment_for->id);
                         }else{
+                            $clearedparents=$this->clearParents($payment_for->parent_referral);
                             $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
                         }
                         
@@ -185,13 +189,11 @@ class TransactionController extends Controller
                             $members=[];
                             $trans=$this->checkUpWithdrawableAmount($payment_for->parent_referral,$trans,$members);
                         }
-                        // if($this->clearWithdrawableAmt($trans)){
-                        // }
-                        
+                                                
                         //send email confirmation
                         $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
                         
-                        return response()->json(['status' => true,'object'=>$product, 'message' => "Payment Successful"]);
+                        return response()->json(['status' => true,'object'=>$payment_for, 'message' => "Payment Successful"]);
                     } else {
                         return response()->json(['status' => false, 'message' => 'Payment for user with ID: '.$request->id.' cannot be processed.']); 
                     }
@@ -276,7 +278,7 @@ class TransactionController extends Controller
                                 
                     // DB::commit();
                     //recursive function to crawl to members.
-                    if($payment_for['parent']->role_id!=3){
+                    if($member['parent']->role_id!=3){
                         if($comm_rate==0.3){
                             return $this->assignCommission($parent,$newmemberid,0.1,$amt);
                         }else{
@@ -294,22 +296,40 @@ class TransactionController extends Controller
         }
     }
 
+    protected function clearInfluencerTrans($userid,$memberid){
+        DB::beginTransaction();
+        try{
+            Transaction::where('user_id',$userid)->where('commission_from',$memberid)->where('cleared',0)->update(['cleared'=>1]);
+            DB::commit();
+
+            return true;
+        }catch(Exception $e){
+            DB::rollback();
+            return false;
+        }
+    }
+    protected function setWithdrawableInfluencer($userid){
+        try{
+            $trans = Transaction::where('user_id',$userid)->where('trans_type',2)->where('cleared',1)->where('withdrawable',0)->get(['id']);
+            if($trans->sum('amount')>=5000){
+                $this->clearWithdrawableAmt($trans);
+            }
+            
+            return true;
+        }catch(Exception $e){
+            return false;
+        }
+    }
     public function clearTransactions($parentid,$members){
         // DB::beginTransaction();
         try{
             $parent=User::where('id',$parentid)->first();
+            
             if($parentid!=1){
                 if($parent->cleared==1){
-                    
-                    // foreach($members as $mem){
-                    //     // UserCommission::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
-                    //     Transaction::where('user_id',$parentid)->where('commission_from',$mem->id)->where('cleared',0)->update(['cleared'=>1]);
-                    // }
+                   
                     Transaction::where('user_id',$parentid)->whereIn('commission_from',$members)->where('cleared',0)->update(['cleared'=>1]);
                     // DB::commit();
-
-                    // $add_members = User::select('id')->where('parent_referral',$parent->parent_referral)->get();
-                    // array_push('$members',$add_members);
                     return $this->clearTransactions($parent->parent_referral,$members);
                 }else{
                     //proceed to the next parent

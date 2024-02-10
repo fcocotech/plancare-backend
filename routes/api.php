@@ -42,6 +42,7 @@ Route::middleware('auth:api')->group(function () {
     // User
     Route::get('/users', 'App\Http\Controllers\UserController@get');
     Route::get('/influencers', 'App\Http\Controllers\UserController@getInfluencers');
+    Route::post('/influencers/approve', 'App\Http\Controllers\UserController@approveInfluencer');
     // Route::get('/teammembers', 'App\Http\Controllers\UserController@getMembers');
     Route::get('/user/{id}', 'App\Http\Controllers\UserController@getId');
     Route::get('/users/card-totals', 'App\Http\Controllers\UserController@getCardData');
