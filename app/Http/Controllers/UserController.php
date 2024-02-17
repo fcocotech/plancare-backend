@@ -402,7 +402,7 @@ class UserController extends Controller
             }else{
                 $user->delete();
             }
-        
+            
             Transaction::where('commission_from',$user->id)->where("trans_type",2)->update(['cleared'=>0,'withdrawable'=>0]);
             Transaction::where('commission_from',$user->id)->where("trans_type",2)->delete();
         
