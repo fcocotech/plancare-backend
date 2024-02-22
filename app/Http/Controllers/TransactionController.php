@@ -581,7 +581,7 @@ class TransactionController extends Controller
                     'withdraw_account_details' => $withdraw_account_details,
                     'requesting_user' => $user,
                 ], function ($message) use ($adminUser, $data, $user) {
-                    $message->to($adminUser->email)->subject('Withdrawal Request - User ID: '.$user->id.' with Transaction ID: '.$data['transaction_id']);
+                    $message->to($adminUser->email)->subject('Withdrawal Request - User ID: '.$user->referral_code.' with Transaction ID: '.$data['transaction_id']);
                 });
             }
 
