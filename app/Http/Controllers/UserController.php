@@ -90,7 +90,7 @@ class UserController extends Controller
             ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
             ->leftJoin('transactions as tr', function ($join) {
                 $join->on('tr.user_id', '=', 'users.id')
-                    ->where('tr.trans_type', '2')->where('tr.cleared', '1')->whereNull('tr.deleted_at');
+                    ->where('tr.trans_type', '2')->whereNull('tr.deleted_at');
             })
             ->where('users.is_admin', '!=', 1)
             ->where('users.role_id', '=', 3)
