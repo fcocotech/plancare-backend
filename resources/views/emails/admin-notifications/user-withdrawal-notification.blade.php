@@ -437,6 +437,7 @@
   <![endif]-->
   </head>
   <body>
+    <span class="preheader">Use this link to verify your email.</span>
     <table class="email-wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
       <tr>
         <td align="center">
@@ -448,43 +449,28 @@
                 </a>
               </td>
             </tr>
-            <!-- Email Body -->
             <tr>
               <td class="email-body" width="570" cellpadding="0" cellspacing="0">
                 <table class="email-body_inner" align="center" width="570" cellpadding="0" cellspacing="0" role="presentation">
-                  <!-- Body content -->
                   <tr>
                     <td class="content-cell">
                       <div class="f-fallback">
-                        <h1>Confirm Your Email Address</h1>
-                        
-                        <p>Tap the button below to confirm your email address. If you didn't create an account with <a href="https://members.plancareph.com">Plancare PH</a>, you can safely delete this email.</p>
-                        <!-- Action -->
-                        <table class="body-action" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation">
-                          <tr>
-                            <td align="center">
-                              <table width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation">
-                                <tr>
-                                  <td align="center">
-                                    <a href="{{$action_url}}" class="f-fallback button button--green" target="_blank">Verify Your Email</a>
-                                  </td>
-                                </tr>
-                              </table>
-                            </td>
-                          </tr>
-                        </table>
-                        <p>If you did not created an account, please ignore this email or <a href="mailto:support@plancareph.com">contact support</a> if you have questions.</p>
-                        <p>Thanks,
-                          <br>The Plancare PH team</p>
-                        <!-- Sub copy -->
-                        <table class="body-sub" role="presentation">
-                          <tr>
-                            <td>
-                              <p class="f-fallback sub">If you’re having trouble with the button above, copy and paste the URL below into your web browser.</p>
-                              <p class="f-fallback sub">{{$action_url}}</p>
-                            </td>
-                          </tr>
-                        </table>
+                        <h1>Withdrawal Request</h1>
+                        <p>Hi, {{$name}}</p>
+                        <p>This is to notify you that <b>{{$requesting_user->name}}</b> with ID <b>{{$requesting_user->referral_code}}</b> has submitted a points withdrawal request with Transaction No. <b>{{$trans_no}}</b>.</p>
+                        <p><b>Transaction Details</b></p>
+                        <p style="margin: 0;">Transaction No: <b>{{$trans_no}}</b></p>
+                        <p style="margin: 0;">Amount to Withdraw: <b>{{$amount_to_withdraw}}</b></p>
+                        <p style="margin: 0;">Less: Admin Fee <b>{{$admin_fee}}</b></p>
+                        <p><b>Total Amount to Receive: {{$amount_to_receive}}</b></p>
+                        <p><b>Withdrawal Method: {{$withdrawal_method}}</b></p>
+                        @if($withdraw_account_details)
+                          <p>To account details:</p>
+                          <p style="margin: 0;">Bank Name: <b>{{ $withdraw_account_details->bank_name }}</b></p>
+                          <p style="margin: 0;">Account Name: <b>{{ $withdraw_account_details->account_name }}</b></p>
+                          <p style="margin: 0;">Account Number: <b>{{ $withdraw_account_details->account_number }}</b></p><br>
+                        @endif
+
                       </div>
                     </td>
                   </tr>

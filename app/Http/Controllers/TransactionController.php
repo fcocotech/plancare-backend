@@ -568,6 +568,23 @@ class TransactionController extends Controller
                 $message->to($user->email)->subject('Your Withdrawal Request is In Progress with Transaction ID: '.$data['transaction_id']);
             });
 
+            // get admin user
+            $adminUser = User::where('id', 1)->first();
+            if($adminUser->email){
+                Mail::send('emails.admin-notifications.user-withdrawal-notification', [
+                    'name' => $adminUser->name,
+                    'trans_no' => $data['transaction_id'],
+                    'amount_to_withdraw' => $data['amount'],
+                    'admin_fee' => 50.00,
+                    'amount_to_receive' => ($data['amount'] - 50),
+                    'withdrawal_method' => $mode_of_payment->name ?? '--',
+                    'withdraw_account_details' => $withdraw_account_details,
+                    'requesting_user' => $user,
+                ], function ($message) use ($adminUser, $data, $user) {
+                    $message->to($adminUser->email)->subject('Withdrawal Request - User ID: '.$user->id.' with Transaction ID: '.$data['transaction_id']);
+                });
+            }
+
             return response()->json(['status' => $transaction['status'], 'message' => $transaction['status'] ? 'Withdraw requests successful and marked as pending.' : $transaction['message']]);
         } catch (\Exception $e){
             return response()->json(['status' => false, 'message' => 'There was an error on your request.', 'detail' => $e->getMessage()]);
