@@ -21,6 +21,7 @@ class WithdrawalAccountTypeSeeder extends Seeder
             ['name' => 'E-Wallet'],
             ['name' => 'Payment Centers'],
             ['name' => 'Other'],
+            ['name' => 'Points'],
         ];
 
         foreach ($accounts as $account) {

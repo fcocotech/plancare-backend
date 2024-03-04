@@ -32,6 +32,9 @@ class TransactionController extends Controller
             $cleared = Transaction::with(['commission_from'])->where('trans_type', '2')->where('cleared',1)->sum('amount');
             $withdrawable = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1)->get();
             $withdrawal_request = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
+
+            $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereNot('status', 5)->get();
+
             $total_earnings = $earnings->sum('amount');
         }else{
             $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->whereNotIn('withdrawable', [2,3,4,5])->get();
@@ -39,6 +42,9 @@ class TransactionController extends Controller
             $cleared = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->sum('amount');
             $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
             $withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
+
+            $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereNot('status', 5)->get();
+
             $total_earnings = $earnings->sum('amount');
         }
         return response()->json([
@@ -47,7 +53,7 @@ class TransactionController extends Controller
             'cleared' => $cleared,
             'total_earnings' => $total_earnings,
             'withdrawal_request'=>$withdrawal_request->sum('amount'),
-            'total_withdrawable'=>$withdrawable->sum('amount')-$withdrawal_request->sum('amount')
+            'total_withdrawable'=>$withdrawable->sum('amount') - ($withdrawal_request->sum('amount') + $points_purchase->sum('amount'))
         ]);
     }
 
@@ -84,6 +90,7 @@ class TransactionController extends Controller
             $transaction->withdrawable= $data['withdrawable'] ?? false;
             $transaction->commission_rate = $data['commission_rate'] ?? 0;
             $transaction->remarks = $data['remarks'] ?? 0;
+            $transaction->product_id = $data['product_id'] ?? null;
             if(isset($data['commission_from'])){
                 $transaction->commission_from = $data['commission_from'];
             }
@@ -693,5 +700,75 @@ class TransactionController extends Controller
         });
 
         return response()->json(['status' => true, 'message' => 'Transaction: '.$request->transaction_id. ' status was updated to '.$transaction_status]);
+    }
+
+    public function buyProduct(Request $request, $product_id) {
+        // check product availability
+        $product = Product::where('id', $product_id)->first();
+        if(!$product){
+            return response()->json(['status' => false, 'message' => 'Transaction failed!']);
+        }
+        // check user
+        $user = Auth::user();
+
+        // check available points
+        $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
+        $withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
+        $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->get();
+        
+        $availablePoints = $withdrawable->sum('amount')- ($withdrawal_request->sum('amount') + $points_purchase->sum('amount'));
+
+        if($availablePoints < $product->price){
+            return response()->json(['status' => false, 'message' => 'Not enough points.']);
+        }
+
+        $data = [
+            'user_id' => $user->id,
+            'amount' => $product->price,
+            'type'=> 4, // Points Purchase
+            'processed_by' => $user->id,
+            'payment_method' => 6, // Points
+            'transaction_id' => substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10),
+            'description' => 'Product Purchase - Points',
+            'status' => 0, // Pending, 2 - In Progress, 1 - Completed
+            'proof_url' => null,
+            'withdrawable' => 0,
+            'product_id' => $product->id
+        ];
+
+        $transaction = self::create($data);
+        if($transaction['status']) {
+            // email to admin
+            // email to user
+
+            Mail::send('emails.product-status.pending', [
+                'name' => $user->name,
+                'trans_no' => $data['transaction_id'],
+                'amount_to_withdraw' => $data['amount'],
+                'total_points_available' => ($availablePoints - $product->price) ,
+                'product' => $product,
+            ], function ($message) use ($user, $data) {
+                $message->to($user->email)->subject('Purchase Product with Points is Pending with Transaction ID: '.$data['transaction_id']);
+            });
+
+            // get admin user
+            $adminUser = User::where('id', 1)->first();
+            if($adminUser->email){
+                Mail::send('emails.admin-notifications.product-purchase-notification', [
+                    'name' => $adminUser->name,
+                    'trans_no' => $data['transaction_id'],
+                    'amount_to_withdraw' => $data['amount'],
+                    'total_points_available' => $availablePoints,
+                    'product' => $product,
+                    'buyer' => $user,
+                ], function ($message) use ($adminUser, $data, $user) {
+                    $message->to($adminUser->email)->subject('Product Purchase with Points - User ID: '.$user->referral_code.' with Transaction ID: '.$data['transaction_id']);
+                });
+            }
+
+            return response()->json(['status' => true, 'message' => "Your request to purchase the product with Points was successful and is pending approval."]);
+        } else {
+            return response()->json(['status' => false, 'message' => 'Transaction cannot be processed.']); 
+        }
     }
 }
