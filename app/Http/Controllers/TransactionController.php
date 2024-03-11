@@ -710,7 +710,7 @@ class TransactionController extends Controller
         }
         // check user
         $user = Auth::user();
-
+        $prod_purcahse = new ProductPurchase();
         // check available points
         $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
         $withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
@@ -737,6 +737,16 @@ class TransactionController extends Controller
         ];
 
         $transaction = self::create($data);
+
+        $prod_purcahse->product_id =$product->id;
+        $prod_purcahse->purchase_by=$user->id;
+        $prod_purcahse->referrer_id=$user->id;
+        $prod_purcahse->transaction_id=$transaction->transaction_id;
+        $prod_purcahse->status=0;//pending
+        // $prod_purcahse->quantity=$request->qtyToBuy;
+
+        $prod_purcahse->create();
+
         if($transaction['status']) {
             // email to admin
             // email to user
