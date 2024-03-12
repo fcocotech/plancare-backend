@@ -20,7 +20,9 @@ class ProductPurchase extends Model
     public function product() {
         return $this->hasOne(Product::class, 'id', 'product_id');
     }
-
+    public function purchasedby() {
+        return $this->hasOne(User::class, 'id', 'purchased_by')->select('id', 'name');
+    }
     public function processed_by_user() {
         return $this->hasOne(User::class, 'id', 'processed_by')->select('id', 'name');
     }

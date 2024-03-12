@@ -70,7 +70,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/transaction/checkwithdrawabledown', 'App\Http\Controllers\TransactionController@APIDowncheckWithdrawableAmount');
     Route::post('/transaction/cleartransactions', 'App\Http\Controllers\TransactionController@APIcleartransactions');
     Route::post('/transaction/withdrawal-requests', 'App\Http\Controllers\TransactionController@withdrawalRequest');
-    Route::post('/transaction/buy/product/{product_id}', 'App\Http\Controllers\TransactionController@buyProduct');
+    Route::post('/transaction/buy/product/{qtytobuy}', 'App\Http\Controllers\TransactionController@buyProduct');
     // Route::post('/transaction/commission', 'App\Http\Controllers\TransactionController@APIcommissionDistribution2');
 
     Route::post('/email/paymentconfirm', 'App\Http\Controllers\TransactionController@sendPaymentConfirmationEmail');
@@ -87,7 +87,8 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/product/update-details/{product_id}', 'App\Http\Controllers\ProductController@update');
     Route::get('/products', 'App\Http\Controllers\ProductController@show');
     Route::get('/active-products', 'App\Http\Controllers\ProductController@activeProducts');
-
+    // Products Purchase
+    Route::get('/productpurchase/purchases', 'App\Http\Controllers\ProductPurchaseController@get');
     // OTP
     Route::get('/otp/generate', 'App\Http\Controllers\UserOtpController@generateOTP');
     Route::post('/otp/verify', 'App\Http\Controllers\UserOtpController@verifyOTP');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ProductPurchase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ProductPurchaseController extends Controller
 {
@@ -30,7 +31,20 @@ class ProductPurchaseController extends Controller
     {
         //
     }
+    public function get() {
+        $user = Auth::user();
 
+        if($user->role_id==1){
+            $purchases = ProductPurchase::with(["purchasedby","product"])->where('purchase_type',2)->get();
+        }else{
+            $purchases = ProductPurchase::with(["purchasedby","product"])->where('purchased_by', $user->id)->orWhere('processed_by', $user->id)->where('purchase_type',2)->get();
+        }
+        
+        return response()->json([
+            'status' => true,
+            'purchase' => $purchases,
+        ]);
+    }
     /**
      * Display the specified resource.
      */
