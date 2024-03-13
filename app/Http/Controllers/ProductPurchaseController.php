@@ -38,7 +38,7 @@ class ProductPurchaseController extends Controller
         if($user->role_id==1){
             $purchases = ProductPurchase::with(["purchasedby","product"])->where('purchase_type',2)->get();
         }else{
-            $purchases = ProductPurchase::with(["purchasedby","product"])->where('purchased_by', $user->id)->orWhere('processed_by', $user->id)->where('purchase_type',2)->get();
+            $purchases = ProductPurchase::with(["purchasedby","product"])->where('purchased_by', $user->id)->where('purchase_type',2)->get();
         }
         
         return response()->json([
@@ -65,19 +65,20 @@ class ProductPurchaseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $status)
+    public function update(Request $request)
     {
         //
         try{
             $transaction = Transaction::where('transaction_id',$request->transaction_id)->first();
             $product = ProductPurchase::Find($request->id);
-            if($status){
+
+            if($request->status==1){
                 $product->status=1;
-                $transaction->amount= $transaction->amount*-1;
-                $transaction->status=1;
+                $transaction->amount= $transaction->amount;
+                $transaction->status=$request->status;
             }else{
-                $product->status=3;
-                $transaction->delete();//cancelled
+                $product->status=$request->status;
+                $transaction->status=3;//cancelled
             }
             $product->update();
             $transaction->update();
