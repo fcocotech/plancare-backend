@@ -77,7 +77,7 @@ class ProductPurchaseController extends Controller
                 $transaction->status=1;
             }else{
                 $product->status=3;
-                $transaction->status=3;//cancelled
+                $transaction->delete();//cancelled
             }
             $product->update();
             $transaction->update();
