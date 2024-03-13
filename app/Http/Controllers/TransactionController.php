@@ -364,7 +364,7 @@ class TransactionController extends Controller
             }
             
             return true;
-        }catch(Exception $e){
+        }
             return false;
         }
         

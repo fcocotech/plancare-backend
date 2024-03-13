@@ -89,6 +89,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/active-products', 'App\Http\Controllers\ProductController@activeProducts');
     // Products Purchase
     Route::get('/productpurchase/purchases', 'App\Http\Controllers\ProductPurchaseController@get');
+    Route::post('/productpurchase/update/{status}', 'App\Http\Controllers\ProductPurchaseController@update');
     // OTP
     Route::get('/otp/generate', 'App\Http\Controllers\UserOtpController@generateOTP');
     Route::post('/otp/verify', 'App\Http\Controllers\UserOtpController@verifyOTP');

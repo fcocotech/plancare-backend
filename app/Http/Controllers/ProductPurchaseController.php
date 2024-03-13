@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProductPurchase;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -64,9 +65,34 @@ class ProductPurchaseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, ProductPurchase $productPurchase)
+    public function update(Request $request, $status)
     {
         //
+        try{
+            $transaction = Transaction::where('transaction_id',$request->transaction_id)->first();
+            $product = ProductPurchase::Find($request->id);
+            if($status){
+                $product->status=1;
+                $transaction->amount= $transaction->amount*-1;
+                $transaction->status=1;
+            }else{
+                $product->status=3;
+                $transaction->status=3;//cancelled
+            }
+            $product->update();
+            $transaction->update();
+
+            return response()->json([
+                'status' => true,
+                'message' => "Product purchase updated. Success!",
+            ]); 
+        }catch(Exception $e){
+            return response()->json([
+                'status' => false,
+                'message' =>"Update Failed",
+            ]); 
+        }
+       
     }
 
     /**
