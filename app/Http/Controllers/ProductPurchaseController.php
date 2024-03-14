@@ -6,6 +6,7 @@ use App\Models\ProductPurchase;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class ProductPurchaseController extends Controller
 {
@@ -68,21 +69,50 @@ class ProductPurchaseController extends Controller
     public function update(Request $request)
     {
         //
+        $user = Auth::user();
+        $purchasedby = $request->purchasedby;
         try{
             $transaction = Transaction::where('transaction_id',$request->transaction_id)->first();
             $product = ProductPurchase::Find($request->id);
 
-            if($request->status==1){
-                $product->status=1;
-                $transaction->amount= $transaction->amount;
-                $transaction->status=$request->status;
-            }else{
-                $product->status=$request->status;
-                $transaction->status=3;//cancelled
-            }
-            $product->update();
-            $transaction->update();
+            if($transaction!=null){
+                if($request->status==1){
+                    $product->status=1;
+                    $transaction->amount= $transaction->amount;
+                    $transaction->status=$request->status;
+                }else{
+                    $product->status=$request->status;
+                    $transaction->status=3;//cancelled
+                    $transaction->update();
+                    $transaction->delete();
+                }
+                $product->update();
+                
+                if($request->status==1){
+                    Mail::send('emails.product-status.approved', [
+                        'name' => $purchasedby["name"],
+                        'trans_no' => $product->transaction_id,
+                        'amount_to_withdraw' => $product['amount'],
+                        'product' => $request,
+                    ], function ($message) use ($purchasedby, $product) {
+    
+                        $message->to($purchasedby["email"])->subject('Purchase Product is approved with Transaction ID: '.$product->transaction_id);
+                    });
+                }else{
+                    Mail::send('emails.product-status.cancelled', [
+                        'name' => $purchasedby["name"],
+                        'trans_no' => $product->transaction_id,
+                        'amount_to_withdraw' => $product['amount'],
+                        'product' => $request,
+                    ], function ($message) use ($purchasedby, $product) {
+    
+                        $message->to($purchasedby["email"])->subject('Purchase Product is cancelled with Transaction ID: '.$product->transaction_id);
+                    });
+                }
 
+                
+
+            }
             return response()->json([
                 'status' => true,
                 'message' => "Product purchase updated. Success!",
