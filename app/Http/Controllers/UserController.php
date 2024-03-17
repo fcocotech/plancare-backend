@@ -52,16 +52,16 @@ class UserController extends Controller
             ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
             ->selectRaw('(SELECT p.name FROM product_purchases pp
                             LEFT JOIN products p ON pp.product_id = p.id
-                            WHERE pp.purchased_by = users.id
+                            WHERE pp.purchased_by = users.id AND pp.purchase_type=1
                             ORDER BY pp.created_at ASC
                             LIMIT 1) as product_name')
             ->selectRaw('(SELECT p.price FROM product_purchases pp
                             LEFT JOIN products p ON pp.product_id = p.id
-                            WHERE pp.purchased_by = users.id
+                            WHERE pp.purchased_by = users.id AND pp.purchase_type=1
                             ORDER BY pp.created_at ASC
                             LIMIT 1) as product_price')
             ->selectRaw('(SELECT pp.id FROM product_purchases pp
-                            WHERE pp.purchased_by = users.id
+                            WHERE pp.purchased_by = users.id AND pp.purchase_type=1
                         ) as product_purchase_id')
             // ->selectRaw('(SELECT r.referral_code FROM users r WHERE r.id = users.parent_referral) sa referred_by')
             ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
