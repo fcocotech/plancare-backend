@@ -43,7 +43,7 @@ class TransactionController extends Controller
             $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
             $withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
 
-            $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
+            $points_purchase = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
 
             $total_earnings = $earnings->sum('amount');
         }
