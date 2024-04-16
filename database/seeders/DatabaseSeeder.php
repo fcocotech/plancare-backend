@@ -18,14 +18,12 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
-        // $this->call(UsersTableSeeder::class);
-        // $this->call(SecurityQuestionSeeder::class);
-        // $this->call(CommissionsSeeder::class);
-        // $this->call(ModulesTableSeeder::class);
+        $this->call(UsersTableSeeder::class);
+        $this->call(SecurityQuestionSeeder::class);
+        $this->call(CommissionsSeeder::class);
+        $this->call(ModulesTableSeeder::class);
         $this->call(RolesTableSeeder::class);
-        // $this->call(UsersTableSeeder::class);
-        // $this->call(UsersTableUpdate::class);
-        // $this->call(ProductSeeder::class);
-        // $this->call(WithdrawalAccountTypeSeeder::class);
+        $this->call(ProductSeeder::class);
+        $this->call(WithdrawalAccountTypeSeeder::class);
     }
 }
