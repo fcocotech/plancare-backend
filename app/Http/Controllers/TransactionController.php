@@ -126,11 +126,11 @@ class TransactionController extends Controller
                 $cleared=0;
                 $payment_for = User::with('parent')->where('id',$request->id)->where('status',2)->first();//get the user info of the member
                 //double check for member count
-                if($payment_for['parent']->role_id!=3){
-                    if($this->findChildCount($payment_for->parent_referral)>=4){
-                        return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
-                    }
-                }
+                // if($payment_for['parent']->role_id!=3){
+                //     if($this->findChildCount($payment_for->parent_referral)>=4){
+                //         return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
+                //     }
+                // }
                
                 if($payment_for) {
                     //add transaction for package payment
