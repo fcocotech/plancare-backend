@@ -55,7 +55,8 @@ class TransactionController extends Controller
             'total_earnings' => $total_earnings,
             'withdrawal_request'=>$withdrawal_request->sum('amount'),
             'purchase_points'=>$points_purchase,
-            'total_winthdrawal'=>$total_winthdrawal,
+            'total_withdrawal'=>$total_winthdrawal,
+            'total_withdrawal_amt'=>$total_winthdrawal->sum('amount'),
             'total_withdrawable'=>$withdrawable->sum('amount') - ($withdrawal_request->sum('amount') + $points_purchase->sum('amount'))
         ]);
     }
