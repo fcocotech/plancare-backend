@@ -34,7 +34,7 @@ class TransactionController extends Controller
             $withdrawal_request = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
 
             $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
-            $total_winthdrawal = Transaction::with(['commission_from'])->where('trans_type', '3')->where('withdrawable',5)->get();
+            $total_withdrawal = Transaction::with(['commission_from'])->where('trans_type', '3')->where('withdrawable',5)->get();
             
             $total_earnings = $earnings->sum('amount');
         }else{
@@ -43,7 +43,7 @@ class TransactionController extends Controller
             $cleared = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->sum('amount');
             $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
             $withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
-            $total_winthdrawal = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->where('withdrawable',5)->get();
+            $total_withdrawal = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->where('withdrawable',5)->get();
             $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('user_id', $user->id)->where('payment_method', 6)->whereIn('status', [0,1])->get();
 
             $total_earnings = $earnings->sum('amount');
@@ -55,8 +55,8 @@ class TransactionController extends Controller
             'total_earnings' => $total_earnings,
             'withdrawal_request'=>$withdrawal_request->sum('amount'),
             'purchase_points'=>$points_purchase,
-            'total_withdrawal'=>$total_winthdrawal,
-            'total_withdrawal_amt'=>$total_winthdrawal->sum('amount'),
+            'total_withdrawal'=>$total_withdrawal,
+            'total_withdrawal_amt'=>$total_withdrawal->sum('amount'),
             'total_withdrawable'=>$withdrawable->sum('amount') - ($withdrawal_request->sum('amount') + $points_purchase->sum('amount'))
         ]);
     }
