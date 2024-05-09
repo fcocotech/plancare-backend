@@ -31,7 +31,7 @@ class AuthController extends Controller
         $password = $request->password;
 
         // Add the status to the credentials array
-        $credentials = ['referral_code' => $username, 'password' => $password, 'status' => 1];
+        $credentials = ['referral_code' => $username, 'password' => $password];
 
         // Attempt to authenticate the user
         if (Auth::attempt($credentials) && RateLimiter::availableIn('lock-username:' . $request->username) < 1) {
@@ -89,9 +89,9 @@ class AuthController extends Controller
         }
          
         // If authentication failed, check if it's because of pending status
-        if (Auth::attempt(['referral_code' => $credentials['referral_code'], 'password' => $credentials['password'], 'status' => 2])) {
-            return response()->json(['status' => false, 'message' => 'Account status still pending!'], 200);
-        } 
+        // if (Auth::attempt(['referral_code' => $credentials['referral_code'], 'password' => $credentials['password'], 'status' => 2])) {
+        //     return response()->json(['status' => false, 'message' => 'Account status still pending!'], 200);
+        // } 
 
         if (Auth::attempt(['referral_code' => $credentials['referral_code'], 'password' => $credentials['password']])) {
             return response()->json(['status' => false, 'message' => 'Account status inactive!'], 200);
