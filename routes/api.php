@@ -93,4 +93,11 @@ Route::middleware('auth:api')->group(function () {
     // OTP
     Route::get('/otp/generate', 'App\Http\Controllers\UserOtpController@generateOTP');
     Route::post('/otp/verify', 'App\Http\Controllers\UserOtpController@verifyOTP');
+
+    //ProductCategory
+    Route::get('/product-category/get', 'App\Http\Controllers\ProductCategoryController@show');
+    Route::put('/product-category/update/{id}', 'App\Http\Controllers\ProductCategoryController@update');
+    Route::post('/product-category/add', 'App\Http\Controllers\ProductCategoryController@store');
+    Route::delete('/product-category/delete/{id}', 'App\Http\Controllers\ProductCategoryController@delete');
+
 });
