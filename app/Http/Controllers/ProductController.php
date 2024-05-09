@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
 
     public function show(Request $request) {
-        $products = Product::get();
+        $products = Product::with(['category'])->get();
         return response()->json([
             'status' => true,
             'products' => $products,
@@ -36,6 +36,7 @@ class ProductController extends Controller
             $product->price = $request->price;
             $product->is_active = 1;
             $product->is_shop_active = 1;
+            $product->category_id = $request->category_id;
 
             if($request->has('product_image') && $request->product_image != ''){
                 $proof_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->product_image));
@@ -117,6 +118,9 @@ class ProductController extends Controller
         }
         if($product->price != $request->price){
             $product->price = $request->price;
+        }
+        if($product->category_id != $request->category_id){
+            $product->category_id = $request->category_id;
         }
         
         if($request->has('product_image') && $request->product_image != ''){

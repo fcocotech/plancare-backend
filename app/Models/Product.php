@@ -16,6 +16,11 @@ class Product extends Model
         'price',
         'is_active',
         'is_shop_active',
-        'photo_url'
+        'photo_url',
+        'category_id',
     ];
+
+    public function category() {
+        return $this->hasOne(ProductCategory::class, 'id', 'category_id');
+    }
 }
