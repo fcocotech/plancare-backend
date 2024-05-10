@@ -16,7 +16,7 @@ class TransactionController extends Controller
     public function get() {
         $user = Auth::user();
 
-        $transactions = Transaction::with(["user","processed_by"])->where('user_id', $user->id)->orWhere('processed_by', $user->id)->get();
+        $transactions = Transaction::with(["user","processed_by","product.category"])->where('user_id', $user->id)->orWhere('processed_by', $user->id)->get();
         return response()->json([
             'status' => true,
             'transactions' => $transactions,

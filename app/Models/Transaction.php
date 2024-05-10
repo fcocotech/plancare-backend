@@ -21,7 +21,11 @@ class Transaction extends Model
         'user_id', 
         'status',
         'commission_rate',
-        'commission_from'
+        'commission_from',
+        'cleared',
+        'withdrawable',
+        'remarks',
+        'product_id'
     ];
 
     public function processed_by() {
@@ -38,6 +42,10 @@ class Transaction extends Model
 
     public function mode_of_payment() {
         return $this->hasOne(WithdrawalAccountType::class, 'id', 'payment_method');
+    }
+
+    public function product() {
+        return $this->hasOne(Product::class, 'id', 'product_id');
     }
 
 }
