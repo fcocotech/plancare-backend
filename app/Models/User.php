@@ -22,7 +22,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name', 'email', 'password', 'birthdate', 'nationality', 'address', 'city',
         'zipcode', 'mobile_number', 'idtype', 'idurl', 'referral_code', 'profile_url', 'security_answers', 'is_admin',
-        'sec_q1', 'sec_q1_ans', 'sec_q2', 'sec_q2_ans', 'sec_q3', 'sec_q3_ans', 'sec_q4', 'sec_q4_ans', 'sec_q5', 'sec_q5_ans', 'status'
+        'sec_q1', 'sec_q1_ans', 'sec_q2', 'sec_q2_ans', 'sec_q3', 'sec_q3_ans', 'sec_q4', 'sec_q4_ans', 'sec_q5', 'sec_q5_ans', 'status', 'product_id'
         // 'reference_code',
     ];
 

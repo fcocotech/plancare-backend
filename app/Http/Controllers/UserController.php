@@ -188,6 +188,7 @@ class UserController extends Controller
         $user->reference_code   = 0;
         $user->cleared          = false;
         $user->role_id          = 3; // Influencer role
+        $user->product_id       = $request->product;
         if($request->photoprofile == null || $request->photoprofile ==""){
             $request->photoprofile ==  "person.png";
         }
@@ -298,6 +299,7 @@ class UserController extends Controller
         $user->parent_referral  = $referrerUser->id;//$referrerUser->referral_code;//assign parent referral code
         $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
         $user->status           = 2;//assign as pending
+        $user->product_id       = $request->product;
         $user->password = Hash::make($request->password);
         $user->reference_code=0;
         $user->cleared = false;

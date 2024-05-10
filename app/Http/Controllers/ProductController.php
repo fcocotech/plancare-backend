@@ -19,7 +19,7 @@ class ProductController extends Controller
     }
 
     public function activeProducts(Request $request) {
-        $products = Product::where('is_active', 1)->get();
+        $products = Product::with(['category'])->where('is_active', 1)->get();
         return response()->json([
             'status' => true,
             'products' => $products,

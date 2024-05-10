@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', 'App\Http\Controllers\AuthController@login')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 // Security Question  
 Route::get('/security-questions/get-all', 'App\Http\Controllers\SecurityQuestionController@get')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
+Route::get('/active-products/get', 'App\Http\Controllers\ProductController@activeProducts')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
+Route::get('/active-categories/get', 'App\Http\Controllers\ProductCategoryController@show')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
+
 Route::post('/register/user', 'App\Http\Controllers\UserController@create')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 Route::post('/register/influencer', 'App\Http\Controllers\UserController@createInfluencer')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 
