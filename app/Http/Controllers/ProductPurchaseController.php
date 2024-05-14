@@ -33,15 +33,24 @@ class ProductPurchaseController extends Controller
     {
         //
     }
-    public function get() {
+    public function get(Request $request) {
         $user = Auth::user();
 
         if($user->role_id==1){
-            $purchases = ProductPurchase::with(["purchasedby","product"])->where('purchase_type',2)->get();
+            $purchasesQuery = ProductPurchase::with(["purchasedby","product.category"])->where('purchase_type',2);
         }else{
-            $purchases = ProductPurchase::with(["purchasedby","product"])->where('purchased_by', $user->id)->where('purchase_type',2)->get();
+            $purchasesQuery = ProductPurchase::with(["purchasedby","product.category"])->where('purchased_by', $user->id)->where('purchase_type',2);
         }
-        
+
+        $categoryId = $request->header('category_id');
+        if ($categoryId != 0) {
+            $purchasesQuery->whereHas('product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
+
+        $purchases = $purchasesQuery->get();
+
         return response()->json([
             'status' => true,
             'purchase' => $purchases,

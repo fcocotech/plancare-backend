@@ -11,7 +11,14 @@ class ProductController extends Controller
 {
 
     public function show(Request $request) {
-        $products = Product::with(['category'])->get();
+        $categoryId = $request->header('category_id');
+        $productsQuery = Product::with(['category']);
+        if ($categoryId != 0) {
+            $productsQuery->whereHas('category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
+        $products = $productsQuery->get();
         return response()->json([
             'status' => true,
             'products' => $products,
