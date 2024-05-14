@@ -558,7 +558,7 @@ class UserController extends Controller
             });
         }
         $members = $membersQuery->get();
-        
+
         if($members!=null){
             
             if($members!=null){
@@ -585,8 +585,26 @@ class UserController extends Controller
     }
 
     public function team(Request $request, $user_id){        
-        $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('id', $user_id)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('parent_referral', $leader->id)->where('status', '1')->where('role_id','!=','3')->get();
+        // $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('id', $user_id)->first();
+        $categoryId = $request->header('category_id');
+
+        $leaderQuery = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->with(['productPurchases.product.category'])->where('id', $user_id);
+        if ($categoryId != 0) {
+            $leaderQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
+        $leader = $leaderQuery->first();
+
+
+        // $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('parent_referral', $leader->id)->where('status', '1')->where('role_id','!=','3')->get();
+        $membersQuery = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->with(['productPurchases.product.category'])->where('parent_referral', $leader->id)->where('status', '1')->where('role_id','!=','3');
+        if ($categoryId != 0) {
+            $membersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
+        $members = $membersQuery->get();
         
         $leader->members_count = count($members);
 
