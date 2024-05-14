@@ -534,9 +534,11 @@ class UserController extends Controller
     public function teams(Request $request){
         $user = Auth::user();
         
+        $categoryId = $request->header('category_id');
+    
         $leader = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('referral_code', $user->referral_code)->first();
         $members=array("members"=>[],"count"=>0);
-        $members=$this->getInnerMembers($leader->id,$members);
+        $members=$this->getInnerMembers($leader->id,$members,$categoryId);
        
         return response()->json(['status' => true, 'team' => $leader, 'members' => $members["members"],'count'=>$members["count"]]);
     }
@@ -545,23 +547,38 @@ class UserController extends Controller
         
     }
     
-    protected function getInnerMembers($parentid,$innermembers){
+    protected function getInnerMembers($parentid,$innermembers,$categoryId=0){
 
-        $members = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('parent_referral', $parentid)->where('status', '1')->get();
+        // $members = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('parent_referral', $parentid)->where('status', '1')->get();
+        $membersQuery = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->with(['productPurchases.product.category'])->where('parent_referral', $parentid)->where('status', '1');
+
+        if ($categoryId != 0) {
+            $membersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
+        $members = $membersQuery->get();
+        
         if($members!=null){
             
             if($members!=null){
                 foreach($members as $mem){
-                    $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
+                    $membersQuery = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->with(['productPurchases.product.category'])->where('parent_referral', $mem->id)->where('status', '1');
+
+                    if ($categoryId != 0) {
+                        $membersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                            $query->where('id', $categoryId);
+                        });
+                    }
+                    $member_child = $membersQuery->get();
+
+                    // $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->with(['productPurchases.product.category'])->where('parent_referral', $mem->id)->where('status', '1')->get();
                     if($member_child!=null){
                         array_push($innermembers["members"],$mem);
                         $innermembers["count"] += 1;
-                        $innermembers=$this->getInnerMembers($mem->id,$innermembers);
+                        $innermembers=$this->getInnerMembers($mem->id,$innermembers,$categoryId);
                     }
-                    // $mem->myteam=$member_child;
-                
                 }
-                // return $this->getInnerMembers($mem->id,$innermembers);
             }
         }
         return $innermembers;

@@ -65,6 +65,11 @@ class User extends Authenticatable
     public function members(): HasMany{
         return $this->hasMany(User::class,'parent_referral');
     }
+
+    public function productPurchases(): HasMany{
+        return $this->hasMany(ProductPurchase::class,'purchased_by','id');
+    }
+
     public function clearedmembers(): HasMany{
         return $this->hasMany(User::class,'parent_referral')->where('cleared',1);
     }
