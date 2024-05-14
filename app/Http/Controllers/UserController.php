@@ -18,16 +18,42 @@ class UserController extends Controller
     public $debugger = [];
 
     public function getCardData(Request $request) {
-        $sql = "SELECT 
-                    (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status !='3') as total_users,
-                    (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '2') as pending_users,
-                    (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '1') as total_active
-                FROM users u LIMIT 1
-        ";
-        $totals = DB::select($sql);
+        // $sql = "SELECT 
+        //             (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status !='3') as total_users,
+        //             (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '2') as pending_users,
+        //             (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '1') as total_active
+        //         FROM users u LIMIT 1
+        // ";
+        // $totals = DB::select($sql);
+
+        $totalsQuery = User::with(['productPurchases.product.category'])
+                            ->select(
+                                DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status !=\'3\') as total_users'),
+                                DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'2\') as pending_users'),
+                                DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'1\') as total_active')
+                            );
+
+        $categoryId = $request->header('category_id');
+
+        if ($categoryId != 0) {
+            $totalsQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
+
+        $totals = $totalsQuery->first();
+
+        if ($totals === null) {
+            $totals = (object) [
+                'total_users' => 0,
+                'pending_users' => 0,
+                'total_active' => 0
+            ];
+        }
+
         return response()->json([
             'status' => true,
-            'totals' => $totals[0],
+            'totals' => $totals,
         ]);
     }
 
@@ -48,7 +74,7 @@ class UserController extends Controller
     }
 
     public function get(Request $request) {
-        $users = array("profile"=>User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
+        $users = array("profile"=>User::with(['members', 'productPurchases.product.category'])->select('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
             ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
             ->selectRaw('(SELECT p.name FROM product_purchases pp
                             LEFT JOIN products p ON pp.product_id = p.id
@@ -77,6 +103,14 @@ class UserController extends Controller
            $users["profile"]->where('users.status', $request->filter);//gets all active user
         }
 
+        $categoryId = $request->header('category_id');
+
+        if ($categoryId != 0) {
+            $users["profile"]->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
+
         $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.referral_code','rf.name','users.cleared')->get();
 
         return response()->json(['status' => true, 'users' => $users["profile"], 'params' => $request->filter]);
@@ -84,7 +118,7 @@ class UserController extends Controller
 
     public function getInfluencers(Request $request) {
         $users = array("profile"=>
-            User::with(['members'])->select('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
+            User::with(['members','productPurchases.product.category'])->select('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
             ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
 
             ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
@@ -95,6 +129,14 @@ class UserController extends Controller
             ->where('users.is_admin', '!=', 1)
             ->where('users.role_id', '=', 3)
         );
+
+        $categoryId = $request->header('category_id');
+
+        if ($categoryId != 0) {
+            $users["profile"]->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
 
         $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.referral_code','rf.name','users.cleared')->get();
 
