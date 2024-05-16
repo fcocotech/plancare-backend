@@ -295,14 +295,14 @@ class UserController extends Controller
             ]);
         }
         //check if referral code is already assigned to 4 slots
-        if($referrerUser->id!='1'){
-            if($this->findChildCount($referrerUser->id)>=4){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Slot is already full. Pls use another code',
-                ]);
-            }  
-        }
+        // if($referrerUser->id!='1'){
+        //     if($this->findChildCount($referrerUser->id)>=4){
+        //         return response()->json([
+        //             'status' => false,
+        //             'message' => 'Slot is already full. Pls use another code',
+        //         ]);
+        //     }  
+        // }
 
         if(!$referrerUser){
             return response()->json([
@@ -454,7 +454,7 @@ class UserController extends Controller
                 $parent=User::find($user->parent_referral);
             
                 if($parent!=null){
-                    if($this->findChildCount($parent->id)<3){
+                    // if($this->findChildCount($parent->id)<3){
                             $parent->cleared =0;
                             $parent->update();
                             // print("clear".$parent->id);
@@ -464,7 +464,7 @@ class UserController extends Controller
                                 $this->revertParentTransaction($parent->id,$mem->id);
                              }
                         
-                    }
+                    // }
                 }
             }
            

@@ -46,7 +46,8 @@ class TransactionController extends Controller
             $withdrawal_request = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
 
             $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
-
+            $total_withdrawal = Transaction::with(['commission_from'])->where('trans_type', '3')->where('withdrawable',5)->get();
+            
             $total_earnings = $earnings->sum('amount');
         }else{
             $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->whereNotIn('withdrawable', [2,3,4,5])->get();
@@ -54,8 +55,8 @@ class TransactionController extends Controller
             $cleared = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->sum('amount');
             $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
             $withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
-
-            $points_purchase = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
+            $total_withdrawal = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->where('withdrawable',5)->get();
+            $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('user_id', $user->id)->where('payment_method', 6)->whereIn('status', [0,1])->get();
 
             $total_earnings = $earnings->sum('amount');
         }
@@ -66,6 +67,8 @@ class TransactionController extends Controller
             'total_earnings' => $total_earnings,
             'withdrawal_request'=>$withdrawal_request->sum('amount'),
             'purchase_points'=>$points_purchase,
+            'total_withdrawal'=>$total_withdrawal,
+            'total_withdrawal_amt'=>$total_withdrawal->sum('amount'),
             'total_withdrawable'=>$withdrawable->sum('amount') - ($withdrawal_request->sum('amount') + $points_purchase->sum('amount'))
         ]);
     }
@@ -136,11 +139,11 @@ class TransactionController extends Controller
                 $cleared=0;
                 $payment_for = User::with('parent')->where('id',$request->id)->where('status',2)->first();//get the user info of the member
                 //double check for member count
-                if($payment_for['parent']->role_id!=3){
-                    if($this->findChildCount($payment_for->parent_referral)>=4){
-                        return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
-                    }
-                }
+                // if($payment_for['parent']->role_id!=3){
+                //     if($this->findChildCount($payment_for->parent_referral)>=4){
+                //         return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
+                //     }
+                // }
                
                 if($payment_for) {
                     //add transaction for package payment
@@ -185,30 +188,29 @@ class TransactionController extends Controller
                             $productPurchase->update();
                         }
 
-                        //check if parent has 3 members already
-                        
+                        //It will not matter if influencer or not
                         // commission distribution
-                        if($payment_for['parent']->role_id==3){
+                        // if($payment_for['parent']->role_id==3){
+                        //     $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
+                        //     $this->clearInfluencerTrans($payment_for["parent"]->id,$payment_for->id);
+                        // }else{
+                            // $clearedparents=$this->clearParents($payment_for->parent_referral);
                             $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
-                            $this->clearInfluencerTrans($payment_for["parent"]->id,$payment_for->id);
-                        }else{
-                            $clearedparents=$this->clearParents($payment_for->parent_referral);
-                            $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
-                        }
+                        // }
                         
                         //clear transactions
                         //get other members of parent id
-                        $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
-                        $this->clearTransactions($payment_for->parent_referral,$members);
+                        // $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
+                        // $this->clearTransactions($payment_for->parent_referral,$members);
                        
-                        $trans=[];
-                        // $trans=$memids->get(['id']);
-                        if($payment_for->cleared==1){
-                            $trans=$this->checkDownWithdrawableAmount($request->id,$trans);
-                        }else{
-                            $members=[];
-                            $trans=$this->checkUpWithdrawableAmount($payment_for->parent_referral,$trans,$members);
-                        }
+                        // $trans=[];
+                        // // $trans=$memids->get(['id']);
+                        // if($payment_for->cleared==1){
+                        //     $trans=$this->checkDownWithdrawableAmount($request->id,$trans);
+                        // }else{
+                        //     $members=[];
+                        //     $trans=$this->checkUpWithdrawableAmount($payment_for->parent_referral,$trans,$members);
+                        // }
                                                 
                         //send email confirmation
                         $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
@@ -298,13 +300,13 @@ class TransactionController extends Controller
                                 
                     // DB::commit();
                     //recursive function to crawl to members.
-                    if($member['parent']->role_id!=3){
+                    // if($member['parent']->role_id!=3){
                         if($comm_rate==0.3){
                             return $this->assignCommission($parent,$newmemberid,0.1,$amt);
                         }else{
                             return $this->assignCommission($parent,$newmemberid,$comm_rate/2,$amt);
                         }
-                    }
+                    // }
                     return true;
                 }else{
                     return false;
