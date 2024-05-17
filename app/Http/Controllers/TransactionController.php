@@ -180,7 +180,7 @@ class TransactionController extends Controller
                         $payment_for->update();
 
                         $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
-                        $product = Product::where('id',$productPurchase->product_id)->first();
+                        $product = Product::with(['category'])->where('id',$productPurchase->product_id)->first();
                         if($productPurchase){
                             $productPurchase->status = '1';
                             $productPurchase->processed_by = $user->id;
@@ -195,7 +195,24 @@ class TransactionController extends Controller
                         //     $this->clearInfluencerTrans($payment_for["parent"]->id,$payment_for->id);
                         // }else{
                             // $clearedparents=$this->clearParents($payment_for->parent_referral);
-                            $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
+                        
+                        // family package as defaul commission rate
+                        $commission_rate_default = 0.3;
+
+                        if($product->category->id == 1) { // ============== SAVERS PACKAGE ==============
+                            if($product->price == 599){
+                                $commission_rate_default = 0.25;
+                            }
+                            if($product->price == 1199){
+                                $commission_rate_default = 0.28;
+                            }
+                        }
+
+                        if($prod_purchase->category_id == 2){ // ============== FAMILY PACKAGE ==============
+                            $commission_rate_default = 0.3;
+                        }
+
+                        $this->assignCommission($payment_for, $payment_for->id, $commission_rate_default, $request->amount);
                         // }
                         
                         //clear transactions
@@ -301,11 +318,15 @@ class TransactionController extends Controller
                     // DB::commit();
                     //recursive function to crawl to members.
                     // if($member['parent']->role_id!=3){
-                        if($comm_rate==0.3){
-                            return $this->assignCommission($parent,$newmemberid,0.1,$amt);
-                        }else{
-                            return $this->assignCommission($parent,$newmemberid,$comm_rate/2,$amt);
-                        }
+                    if($comm_rate == 0.25 || $comm_rate == 0.28){
+                        return $this->assignCommission($parent, $newmemberid, 0.09, $amt); // ============== SAVERS PACKAGE ============== LEVEL 2
+                    } else if($comm_rate == 0.09) { 
+                        return $this->assignCommission($parent, $newmemberid, 0.05, $amt); // ============== SAVERS PACKAGE ============== LEVEL 3
+                    }else if($comm_rate == 0.3) {
+                        return $this->assignCommission($parent, $newmemberid, 0.1, $amt); // ============== FAMILY PACKAGE ============== LEVEL 2
+                    }else{
+                        return $this->assignCommission($parent, $newmemberid, $comm_rate/2, $amt);
+                    }
                     // }
                     return true;
                 }else{

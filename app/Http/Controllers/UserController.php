@@ -202,7 +202,7 @@ class UserController extends Controller
     
 
     public function createInfluencer(Request $request) {
-        $product_id = 1;
+        $product_id = $request->product;
         $parent_id = '10011'; // assigned to admin
 
         $referrerUser = User::where('referral_code', $parent_id)->orWhere('id', 1)->where('status', 1)->first();
@@ -280,7 +280,8 @@ class UserController extends Controller
         // }
         
         
-        $product_id = 1;
+        // $product_id = 1;
+        $product_id = $request->product;
         $parent_id = 0;
         if($request->referral_code==null){
             $request->referral_code='10011';//assign to admin
