@@ -208,7 +208,7 @@ class TransactionController extends Controller
                             }
                         }
 
-                        if($prod_purchase->category_id == 2){ // ============== FAMILY PACKAGE ==============
+                        if($product->category_id == 2){ // ============== FAMILY PACKAGE ==============
                             $commission_rate_default = 0.3;
                         }
 
