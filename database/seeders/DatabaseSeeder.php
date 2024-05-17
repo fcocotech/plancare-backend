@@ -25,5 +25,6 @@ class DatabaseSeeder extends Seeder
         $this->call(RolesTableSeeder::class);
         $this->call(ProductSeeder::class);
         $this->call(WithdrawalAccountTypeSeeder::class);
+        $this->call(ProductCategorySeeder::class);
     }
 }
