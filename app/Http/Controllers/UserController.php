@@ -26,30 +26,36 @@ class UserController extends Controller
         // ";
         // $totals = DB::select($sql);
 
-        $totalsQuery = User::with(['productPurchases.product.category'])
-                            ->select(
-                                DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status !=\'3\') as total_users'),
-                                DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'2\') as pending_users'),
-                                DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'1\') as total_active')
-                            );
+        // $totalsQuery = User::with(['productPurchases.product.category'])
+        //                     ->select(
+        //                         DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status !=\'3\') as total_users'),
+        //                         DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'2\') as pending_users'),
+        //                         DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'1\') as total_active')
+        //                     );
+        
+        $totalUsersQuery        = User::with(['productPurchases.product.category'])->where('status', '!=', 3)->where('is_admin', 0);
+        $totalPendingUsersQuery = User::with(['productPurchases.product.category'])->where('status', 2)->where('is_admin', 0);
+        $totalActiveUsersQuery  = User::with(['productPurchases.product.category'])->where('status', 1)->where('is_admin', 0);
 
         $categoryId = $request->category_id;
 
         if ($categoryId != 0) {
-            $totalsQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+            $totalUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+            $totalPendingUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+            $totalActiveUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
                 $query->where('id', $categoryId);
             });
         }
 
-        $totals = $totalsQuery->first();
-
-        if ($totals === null) {
-            $totals = (object) [
-                'total_users' => 0,
-                'pending_users' => 0,
-                'total_active' => 0
-            ];
-        }
+        $totals = (object) [
+            'total_users' => $totalUsersQuery->count(),
+            'pending_users' => $totalPendingUsersQuery->count(),
+            'total_active' => $totalActiveUsersQuery->count()
+        ];
 
         return response()->json([
             'status' => true,
