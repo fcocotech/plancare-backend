@@ -33,7 +33,7 @@ class UserController extends Controller
                                 DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'1\') as total_active')
                             );
 
-        $categoryId = $request->header('category_id');
+        $categoryId = $request->category_id;
 
         if ($categoryId != 0) {
             $totalsQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
@@ -103,7 +103,7 @@ class UserController extends Controller
            $users["profile"]->where('users.status', $request->filter);//gets all active user
         }
 
-        $categoryId = $request->header('category_id');
+        $categoryId = $request->category_id;
 
         if ($categoryId != 0) {
             $users["profile"]->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
@@ -130,7 +130,7 @@ class UserController extends Controller
             ->where('users.role_id', '=', 3)
         );
 
-        $categoryId = $request->header('category_id');
+        $categoryId = $request->category_id;
 
         if ($categoryId != 0) {
             $users["profile"]->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
@@ -577,7 +577,7 @@ class UserController extends Controller
     public function teams(Request $request){
         $user = Auth::user();
         
-        $categoryId = $request->header('category_id');
+        $categoryId = $request->category_id;
     
         $leader = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('referral_code', $user->referral_code)->first();
         $members=array("members"=>[],"count"=>0);
@@ -629,7 +629,7 @@ class UserController extends Controller
 
     public function team(Request $request, $user_id){        
         // $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('id', $user_id)->first();
-        $categoryId = $request->header('category_id');
+        $categoryId = $request->category_id;
 
         $leaderQuery = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->with(['productPurchases.product.category'])->where('id', $user_id);
         if ($categoryId != 0) {

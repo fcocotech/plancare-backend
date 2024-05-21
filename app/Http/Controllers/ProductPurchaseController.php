@@ -42,7 +42,7 @@ class ProductPurchaseController extends Controller
             $purchasesQuery = ProductPurchase::with(["purchasedby","product.category"])->where('purchased_by', $user->id)->where('purchase_type',2);
         }
 
-        $categoryId = $request->header('category_id');
+        $categoryId = $request->category_id;
         if ($categoryId != 0) {
             $purchasesQuery->whereHas('product.category', function ($query) use ($categoryId) {
                 $query->where('id', $categoryId);

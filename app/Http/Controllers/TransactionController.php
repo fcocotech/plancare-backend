@@ -15,12 +15,8 @@ class TransactionController extends Controller
     
     public function get(Request $request) {
         $user = Auth::user();
-        $categoryId = $request->header('category_id');
-
-        \Log::info('Headers: ', $request->headers->all());
-        \Log::info('Category ID: ' . $request->header('category_id')); // Log specific header
-        \Log::info('Category ID: ' . $request->header('Category_id')); // Log specific header
-    
+        $categoryId = $request->category_id;
+        
         $transactionsQuery = Transaction::with(["user","processed_by","product.category"])
                                         ->where('user_id', $user->id)
                                         ->orWhere('processed_by', $user->id);

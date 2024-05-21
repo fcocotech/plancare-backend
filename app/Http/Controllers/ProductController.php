@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
 
     public function show(Request $request) {
-        $categoryId = $request->header('category_id');
+        $categoryId = $request->category_id;
         $productsQuery = Product::with(['category']);
         if ($categoryId != 0) {
             $productsQuery->whereHas('category', function ($query) use ($categoryId) {
