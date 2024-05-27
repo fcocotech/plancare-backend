@@ -17,7 +17,7 @@ class TransactionController extends Controller
         $user = Auth::user();
         $categoryId = $request->category_id;
         
-        $transactionsQuery = Transaction::with(["user","processed_by","product.category"])
+        $transactionsQuery = Transaction::with(["user","processed_by","product","product.category"])
                                         ->where('user_id', $user->id)
                                         ->orWhere('processed_by', $user->id);
         
@@ -147,6 +147,9 @@ class TransactionController extends Controller
                
                 if($payment_for) {
                     //add transaction for package payment
+                    $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
+                    $product = Product::with(['category'])->where('id',$productPurchase->product_id)->first();
+
                     $data = [
                         'user_id' => $request->id,
                         'amount' => $request->amount,
@@ -159,7 +162,7 @@ class TransactionController extends Controller
                         'status' => 1,
                         'proof_url' => $request->proof_of_payment,
                         'remarks' => $request->remarks,
-                        'product_id'=>$request->product_purchase_id
+                        'product_id'=>$product->id
                     ];
 
                     if($request->has('proof_of_payment') && $request->proof_of_payment != ''){
@@ -179,9 +182,7 @@ class TransactionController extends Controller
                     if($transaction['status']) {
                         $payment_for->status = 1;
                         $payment_for->update();
-
-                        $productPurchase = ProductPurchase::where('id', $request->product_purchase_id)->first();
-                        $product = Product::with(['category'])->where('id',$productPurchase->product_id)->first();
+                        
                         if($productPurchase){
                             $productPurchase->status = '1';
                             $productPurchase->processed_by = $user->id;
