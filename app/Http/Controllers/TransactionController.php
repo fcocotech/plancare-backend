@@ -159,6 +159,7 @@ class TransactionController extends Controller
                         'status' => 1,
                         'proof_url' => $request->proof_of_payment,
                         'remarks' => $request->remarks,
+                        'product_id'=>$request->product_purchase_id
                     ];
 
                     if($request->has('proof_of_payment') && $request->proof_of_payment != ''){
@@ -212,7 +213,7 @@ class TransactionController extends Controller
                             $commission_rate_default = 0.3;
                         }
 
-                        $this->assignCommission($payment_for, $payment_for->id, $commission_rate_default, $request->amount);
+                        $this->assignCommission($payment_for, $payment_for->id, $commission_rate_default, $request->amount,$request->product_purchase_id);
                         // }
                         
                         //clear transactions
@@ -275,7 +276,7 @@ class TransactionController extends Controller
         }
     }
 
-    protected function assignCommission($member,$newmemberid,$comm_rate,$amt){
+    protected function assignCommission($member,$newmemberid,$comm_rate,$amt,$prodid){
         // DB::beginTransaction();
         try{
             // $newmemberid=$member->id;
@@ -304,6 +305,7 @@ class TransactionController extends Controller
                     $transaction->commission_from = $newmemberid;
                     $transaction->cleared=false;
                     $transaction->withdrawable=false;
+                    $transaction->product_id=$prodid;
                     $transaction->save();
 
                     $commission->commission_level = 0;
@@ -319,13 +321,13 @@ class TransactionController extends Controller
                     //recursive function to crawl to members.
                     // if($member['parent']->role_id!=3){
                     if($comm_rate == 0.25 || $comm_rate == 0.28){
-                        return $this->assignCommission($parent, $newmemberid, 0.09, $amt); // ============== SAVERS PACKAGE ============== LEVEL 2
+                        return $this->assignCommission($parent, $newmemberid, 0.09, $amt,$prodid); // ============== SAVERS PACKAGE ============== LEVEL 2
                     } else if($comm_rate == 0.09) { 
-                        return $this->assignCommission($parent, $newmemberid, 0.05, $amt); // ============== SAVERS PACKAGE ============== LEVEL 3
+                        return $this->assignCommission($parent, $newmemberid, 0.05, $amt,$prodid); // ============== SAVERS PACKAGE ============== LEVEL 3
                     }else if($comm_rate == 0.3) {
-                        return $this->assignCommission($parent, $newmemberid, 0.1, $amt); // ============== FAMILY PACKAGE ============== LEVEL 2
+                        return $this->assignCommission($parent, $newmemberid, 0.1, $amt,$prodid); // ============== FAMILY PACKAGE ============== LEVEL 2
                     }else{
-                        return $this->assignCommission($parent, $newmemberid, $comm_rate/2, $amt);
+                        return $this->assignCommission($parent, $newmemberid, $comm_rate/2, $amt,$prodid);
                     }
                     // }
                     return true;
