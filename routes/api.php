@@ -103,4 +103,6 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/product-category/add', 'App\Http\Controllers\ProductCategoryController@store');
     Route::delete('/product-category/delete/{id}', 'App\Http\Controllers\ProductCategoryController@delete');
 
+    Route::get('/dashboard/category', 'App\Http\Controllers\ProductCategoryController@get');
+
 });
