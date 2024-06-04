@@ -91,9 +91,9 @@ class TransactionController extends Controller
 		$user = Auth::user();
 
 		if($user->id == 1) {
-			$withdrawals = Transaction::with(['user','mode_of_payment'])->whereIn('withdrawable', ['2','3','4','5'])->get();
+			$withdrawals = Transaction::with(['user.parent','mode_of_payment'])->whereIn('withdrawable', ['2','3','4','5'])->get();
 		} else {
-			$withdrawals = Transaction::with(['user','mode_of_payment'])->where('user_id', $user->id)->whereIn('withdrawable', ['2','3','4','5'])->get();
+			$withdrawals = Transaction::with(['user.parent','mode_of_payment'])->where('user_id', $user->id)->whereIn('withdrawable', ['2','3','4','5'])->get();
 		}
 
 		return response()->json([
