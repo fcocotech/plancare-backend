@@ -444,7 +444,7 @@ class TransactionController extends Controller
 							$next_comm_rate = $commission_rates_599[$level];
 						} elseif ($product->price == 1199) {
 							$next_comm_rate = $commission_rates_1199[$level];
-						} elseif ($product->price == 3000 || $product->category_id == 2) {
+						} elseif ($product->price == 3000) {
 							$next_comm_rate = $commission_rates_3000[$level];
 						}
 					} else {
