@@ -944,7 +944,7 @@ class TransactionController extends Controller
 				return response()->json(['status' => false, 'message' => 'Transaction cannot be processed.']); 
 			}
 		}catch(Exception $e){
-			return response()->json(['status' => false, 'message' => $e.message]); 
+			return response()->json(['status' => false, 'message' => $e->getMessage()]); 
 		}
 	
 	}
