@@ -588,8 +588,10 @@ class UserController extends Controller
         $leader = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('referral_code', $user->referral_code)->first();
         $members=array("members"=>[],"count"=>0);
         $members=$this->getInnerMembers($leader->id,$members,$categoryId);
-       
-        return response()->json(['status' => true, 'team' => $leader, 'members' => $members["members"],'count'=>$members["count"]]);
+        
+        $pendingMembers = User::where('status', 2)->count();
+
+        return response()->json(['status' => true, 'team' => $leader, 'members' => $members["members"],'count'=>$members["count"],'pending_members'=>$pendingMembers]);
     }
 
     public function teamsCount(Request $request){
