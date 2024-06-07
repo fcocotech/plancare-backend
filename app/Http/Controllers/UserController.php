@@ -258,6 +258,16 @@ class UserController extends Controller
         file_put_contents($id_path.$id_name, $id_image);
         $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
 
+        $proof_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->proofImage));
+        $proof_path = storage_path('app/public/images/proof/');
+        if(!File::isDirectory($proof_path)){
+            File::makeDirectory($proof_path, 0777, true, true);
+        }
+        $proof_name = time().'_'.$user->id.'_proof.png';
+        file_put_contents($proof_path.$proof_name, $proof_image);
+        $user->proof_url = env('APP_URL', '') . '/storage/images/proof/'.$proof_name;
+
+        
         //Add product purchase
         $user->save();
         $productPurchase                = new ProductPurchase;
@@ -372,6 +382,15 @@ class UserController extends Controller
         $id_name = time().'_'.$user->id.'_id.png';
         file_put_contents($id_path.$id_name, $id_image);
         $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
+
+        $proof_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->proofImage));
+        $proof_path = storage_path('app/public/images/proof/');
+        if(!File::isDirectory($proof_path)){
+            File::makeDirectory($proof_path, 0777, true, true);
+        }
+        $proof_name = time().'_'.$user->id.'_proof.png';
+        file_put_contents($proof_path.$proof_name, $proof_image);
+        $user->proof_url = env('APP_URL', '') . '/storage/images/proof/'.$proof_name;
 
         //Add product purchase
         $user->save();
@@ -556,6 +575,17 @@ class UserController extends Controller
                 $id_name = time().'_'.$user->id.'_id.png';
                 file_put_contents($id_path.$id_name, $id_image);
                 $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
+            }
+
+            if($user->proof_url != $request->proofImage) {
+                $proof_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->proofImage));
+                $proof_path = storage_path('app/public/images/proof/');
+                if(!File::isDirectory($proof_path)){
+                    File::makeDirectory($proof_path, 0777, true, true);
+                }
+                $proof_name = time().'_'.$user->id.'_proof.png';
+                file_put_contents($proof_path.$proof_name, $proof_image);
+                $user->proof_url = env('APP_URL', '') . '/storage/images/proof/'.$proof_name;
             }
 
             if($request->has('newpassword') && $request->has('confirmpassword')){
