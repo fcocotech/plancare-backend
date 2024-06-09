@@ -79,6 +79,8 @@ class TransactionController extends Controller
 			'earnings' => $earnings,
 			'cleared' => $cleared,
 			'total_earnings' => $total_earnings,
+			'avail_earnings'=>0,
+			'pending_earnings'=>$total_earnings-$avail_earnings,
 			'withdrawal_request'=>$withdrawal_request->sum('amount'),
 			'purchase_points'=>$points_purchase,
 			'total_withdrawal'=>$total_withdrawal,
