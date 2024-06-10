@@ -670,11 +670,11 @@ class UserController extends Controller
         $categoryId = $request->category_id;
 
         $leaderQuery = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->with(['productPurchases.product.category'])->where('id', $user_id);
-        if ($categoryId != 0) {
-            $leaderQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
-                $query->where('id', $categoryId);
-            });
-        }
+        // if ($categoryId != 0) {
+        //     $leaderQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+        //         $query->where('id', $categoryId);
+        //     });
+        // }
         $leader = $leaderQuery->first();
 
 
