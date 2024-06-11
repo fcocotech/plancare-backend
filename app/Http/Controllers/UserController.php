@@ -403,9 +403,23 @@ class UserController extends Controller
 
         $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
         $user->update();
+        
+        $product = Product::with(['category'])->where('id', $product_id)->first();
+
+        $initial_commission_rate = 0.0;
+        if ($product->price == 599) {
+            $initial_commission_rate = 0.25;
+        } elseif ($product->price == 1199) {
+            $initial_commission_rate = 0.28;
+        } elseif ($product->price == 3000) {
+            $initial_commission_rate = 0.30;
+        }
+
+        TransactionController::assignCommissionV2($user, $user->id, 1, $initial_commission_rate, $product->price, $product->id);
+        
         $this->sendEmailVerification($user);
         $this->sendWelcomeEmail($user);
-        
+
         return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase]);
        
     }

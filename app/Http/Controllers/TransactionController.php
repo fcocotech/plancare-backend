@@ -80,7 +80,7 @@ class TransactionController extends Controller
 			'cleared' => $cleared,
 			'total_earnings' => $total_earnings,
 			'avail_earnings'=>0,
-			'pending_earnings'=>$total_earnings-$avail_earnings,
+			'pending_earnings'=>$total_earnings-0,
 			'withdrawal_request'=>$withdrawal_request->sum('amount'),
 			'purchase_points'=>$points_purchase,
 			'total_withdrawal'=>$total_withdrawal,
@@ -373,12 +373,12 @@ class TransactionController extends Controller
 						$initial_commission_rate = 0.25;
 					} elseif ($product->price == 1199) {
 						$initial_commission_rate = 0.28;
-					} elseif ($product->price == 3000 || $product->category_id == 2) {
+					} elseif ($product->price == 3000) {
 						$initial_commission_rate = 0.30;
 					}
 
 					// Start the recursive commission assignment
-					$this->assignCommissionV2($payment_for, $payment_for->id, 1, $initial_commission_rate, $request->amount, $request->product_purchase_id);
+					self::assignCommissionV2($payment_for, $payment_for->id, 1, $initial_commission_rate, $request->amount, $product->id);
 
 					$this->sendPaymentConfirmationEmail($data["transaction_id"], $payment_for, $product);
 
@@ -394,7 +394,12 @@ class TransactionController extends Controller
     }
 	}
 
-	protected function assignCommissionV2($member, $newmemberid, $level, $comm_rate, $amt, $prodid) {
+	public static function roundValue($value, $precision = 15) {
+		return round($value, $precision);
+	}
+
+	public static function assignCommissionV2($member, $newmemberid, $level, $comm_rate, $amt, $prodid) {
+	
     try {
 			$user = Auth::user();
 			$parent = User::find($member->parent_referral);
@@ -410,12 +415,12 @@ class TransactionController extends Controller
 					$transaction->payment_method = 0;
 					$transaction->amount = $amt * $comm_rate; // Assuming comm_rate is a decimal
 					$transaction->proof_url = null;
-					$transaction->processed_by = $user->id;
-					$transaction->created_by = $user->id;
+					$transaction->processed_by = $user->id ?? 1; // default to 1; registering user don't have Auth
+					$transaction->created_by = $user->id ?? 1; // default to 1; registering user don't have Auth
 					$transaction->user_id = $parent->id;
 					$transaction->trans_type = 2; // commission
 					$transaction->status = 1;
-					$transaction->commission_rate = roundValue($comm_rate);
+					$transaction->commission_rate = self::roundValue($comm_rate);
 					$transaction->commission_from = $newmemberid;
 					$transaction->cleared = false;
 					$transaction->withdrawable = false;
@@ -454,7 +459,7 @@ class TransactionController extends Controller
 						$next_comm_rate = 0.000006748025242;
 					}
 
-					return $this->assignCommissionV2($parent, $newmemberid, $level + 1, $next_comm_rate, $amt, $prodid);
+					return self::assignCommissionV2($parent, $newmemberid, $level + 1, $next_comm_rate, $amt, $prodid);
 				} else {
 					return false;
 				}
