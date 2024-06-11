@@ -321,7 +321,7 @@ class TransactionController extends Controller
 	public function makePaymentV2(Request $request) {
     try {
 			$user = Auth::user();
-			$payment_for = User::with('parent')->where('id', $request->id)->where('status', 2)->first(); // Get the user info of the member
+			$payment_for = User::with('parent')->where('id', $request->id)->first(); // Get the user info of the member
 
 			if ($payment_for) {
 				// Add transaction for package payment
@@ -367,18 +367,26 @@ class TransactionController extends Controller
 						$productPurchase->update();
 					}
 
-					// Assign initial commission rate based on product
-					$initial_commission_rate = 0.0;
-					if ($product->price == 599) {
-						$initial_commission_rate = 0.25;
-					} elseif ($product->price == 1199) {
-						$initial_commission_rate = 0.28;
-					} elseif ($product->price == 3000) {
-						$initial_commission_rate = 0.30;
+					$commissionedTransactions = Transaction::where('trans_type', 2)->where('withdrawable', 0)->where('cleared', 0)->where('commission_from', $payment_for->id)->get();
+					foreach ($commissionedTransactions as $commissionedTransaction) {
+						$commissionedTransaction->cleared = true;
+						$commissionedTransaction->withdrawable = true;
+						$commissionedTransaction->update();
 					}
 
+
+					// Assign initial commission rate based on product
+					// $initial_commission_rate = 0.0;
+					// if ($product->price == 599) {
+					// 	$initial_commission_rate = 0.25;
+					// } elseif ($product->price == 1199) {
+					// 	$initial_commission_rate = 0.28;
+					// } elseif ($product->price == 3000) {
+					// 	$initial_commission_rate = 0.30;
+					// }
+
 					// Start the recursive commission assignment
-					self::assignCommissionV2($payment_for, $payment_for->id, 1, $initial_commission_rate, $request->amount, $product->id);
+					// self::assignCommissionV2($payment_for, $payment_for->id, 1, $initial_commission_rate, $request->amount, $product->id);
 
 					$this->sendPaymentConfirmationEmail($data["transaction_id"], $payment_for, $product);
 
