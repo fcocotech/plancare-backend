@@ -57,9 +57,9 @@ class ProductCategoryController extends Controller
             
             $results[] = [
                 'name' => $category->name,
-                'total_accumulated_points' => $totalAccumulatedPoints,
-                'total_withdrawals' => $totalWithdrawable - ($totalWithdrawalRequests + $totalPointsPurchase),
-                'total_balance' => ($totalWithdrawable - $totalWithdrawalRequests)
+                'total_accumulated_points' => number_format($totalAccumulatedPoints,2),
+                'total_withdrawals' => number_format($totalWithdrawable - ($totalWithdrawalRequests + $totalPointsPurchase),2),
+                'total_balance' => number_format(($totalWithdrawable - $totalWithdrawalRequests),2)
             ];
         }
 
