@@ -493,9 +493,9 @@ class TransactionController extends Controller
 	protected function setWithdrawableInfluencer($userid){
 		try{
 			$trans = Transaction::where('user_id',$userid)->where('trans_type',2)->where('cleared',1)->where('withdrawable',0)->get(['id']);
-			if($trans->sum('amount')>=5000){
+			// if($trans->sum('amount')>=5000){
 				$this->clearWithdrawableAmt($trans);
-			}
+			// }
 			
 			return true;
 		}catch(Exception $e){
