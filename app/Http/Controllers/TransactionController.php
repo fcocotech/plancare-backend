@@ -711,7 +711,7 @@ class TransactionController extends Controller
 			// $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
 			$total_earnings = $earnings->sum('amount');
 
-			if($request->points_to_withdraw < 5000){
+			if($request->points_to_withdraw < 3000){
 				return response()->json(['status' => false, 'message' => 'Withdrawable amount limit is 5,000.00']);
 			}
 
