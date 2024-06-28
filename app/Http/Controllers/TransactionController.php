@@ -176,30 +176,15 @@ class TransactionController extends Controller
                             $productPurchase->update();
                         }
 
-                        //It will not matter if influencer or not
-                        // commission distribution
-                        // if($payment_for['parent']->role_id==3){
-                        //     $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
-                        //     $this->clearInfluencerTrans($payment_for["parent"]->id,$payment_for->id);
-                        // }else{
-                            // $clearedparents=$this->clearParents($payment_for->parent_referral);
-                            $this->assignCommission($payment_for,$payment_for->id,0.3,$request->amount);
-                        // }
-                        
-                        //clear transactions
+                     
+                            $this->assignCommission($payment_for,$payment_for->id,0);
+
+                      
                         //get other members of parent id
-                        // $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
-                        // $this->clearTransactions($payment_for->parent_referral,$members);
-                       
-                        // $trans=[];
-                        // // $trans=$memids->get(['id']);
-                        // if($payment_for->cleared==1){
-                        //     $trans=$this->checkDownWithdrawableAmount($request->id,$trans);
-                        // }else{
-                        //     $members=[];
-                        //     $trans=$this->checkUpWithdrawableAmount($payment_for->parent_referral,$trans,$members);
-                        // }
-                                                
+                        $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
+                        //if members is 3 give match bonus
+                        
+                        
                         //send email confirmation
                         $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
                         
@@ -246,7 +231,7 @@ class TransactionController extends Controller
         }
     }
 
-    protected function assignCommission($member,$newmemberid,$comm_rate,$amt){
+    protected function assignCommission($member,$newmemberid,$comm_rate){
         // DB::beginTransaction();
         try{
             // $newmemberid=$member->id;
@@ -264,7 +249,7 @@ class TransactionController extends Controller
                     $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
                     $transaction->description = "Commission distribution";
                     $transaction->payment_method = 0;
-                    $transaction->amount = $amt * $comm_rate;
+                    $transaction->amount = $comm_rate;
                     $transaction->proof_url = null;
                     $transaction->processed_by = $user->id;
                     $transaction->created_by=$user->id;
@@ -281,18 +266,21 @@ class TransactionController extends Controller
                     $commission->user_id = $parent->id;
                     $commission->commission_from = $newmemberid;
                     $commission->status=1;
-                    $commission->comm_rate = $comm_rate;
-                    $commission->comm_amt = $comm_rate * $amt;
+                    $commission->comm_rate = 0;
+                    $commission->comm_amt = $comm_rate;
                     $commission->cleared=false;
                     $commission->save();
                                 
                     // DB::commit();
                     //recursive function to crawl to members.
                     // if($member['parent']->role_id!=3){
-                        if($comm_rate==0.3){
-                            return $this->assignCommission($parent,$newmemberid,0.1,$amt);
-                        }else{
-                            return $this->assignCommission($parent,$newmemberid,$comm_rate/2,$amt);
+                        if($comm_rate==0){
+                            return $this->assignCommission($parent,$newmemberid,200);
+                        }elseif($comm_rate==10){
+                            return $this->assignCommission($parent,$newmemberid,$comm_rate);
+                        }
+                        else{
+                            return $this->assignCommission($parent,$newmemberid,$comm_rate/2);
                         }
                     // }
                     return true;
