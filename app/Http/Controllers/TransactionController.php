@@ -239,7 +239,7 @@ class TransactionController extends Controller
 
             $transaction = new Transaction;
             $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
-            $transaction->description = "Commission distribution";
+            $transaction->description = "Match Bonus Commission";
             $transaction->payment_method = 0;
             $transaction->amount = $comm_rate;
             $transaction->proof_url = null;
@@ -253,15 +253,8 @@ class TransactionController extends Controller
             $transaction->cleared=false;
             $transaction->withdrawable=false;
             $transaction->save();
+            
 
-            // $commission->commission_level = 0;
-            // $commission->user_id = $parent->id;
-            // $commission->commission_from = $newmemberid;
-            // $commission->status=1;
-            // $commission->comm_rate = 0;
-            // $commission->comm_amt = $comm_rate;
-            // $commission->cleared=false;
-            // $commission->save();
         }
     }
     protected function assignCommission($member,$newmemberid,$comm_rate){
