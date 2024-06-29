@@ -177,11 +177,11 @@ class TransactionController extends Controller
                         }
 
                      
-                            $this->assignCommission($payment_for,$payment_for->id,0);
+                        $this->assignCommission($payment_for,$payment_for->id,0,0);
 
                       
                         //get other members of parent id
-                        $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
+                        // $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
                         //if members is 3 give match bonus
 
                         
@@ -234,7 +234,7 @@ class TransactionController extends Controller
         $user = Auth::user();
         $members = User::where('parent_referral',$parentid)->where("status",1)->count();
         if($members==3){
-            $commission = new UserCommission();
+            // $commission = new UserCommission();
             // $transaction = new transaction();
 
             $transaction = new Transaction;
@@ -245,8 +245,8 @@ class TransactionController extends Controller
             $transaction->proof_url = null;
             $transaction->processed_by = $user->id;
             $transaction->created_by=$user->id;
-            $transaction->user_id = $parent->id;
-            $transaction->trans_type = 7;//match bonus
+            $transaction->user_id = $parentid;
+            $transaction->trans_type = 2;//match bonus
             $transaction->status = 1;
             $transaction->commission_rate = 0;
             $transaction->commission_from = $newmemberid;
@@ -257,22 +257,18 @@ class TransactionController extends Controller
 
         }
     }
-    protected function assignCommission($member,$newmemberid,$comm_rate){
+    protected function assignCommission($member,$newmemberid,$comm_rate,$step){
         // DB::beginTransaction();
         try{
             // $newmemberid=$member->id;
+            $step=$step+1;
             $user = Auth::user();
             $parent = User::find($member->parent_referral);
             if($parent->id==1){
                 return false;
             }else{
                 if($parent!=null){
-                    if($comm_rate>50){
-                        $this->findMatch($member->parent_referral,$newmemberid,500);
-                    }else{
-
-                        $this->findMatch($member->parent_referral,$newmemberid,400);
-                    }
+                   
                     $commission = new UserCommission();
                     // $transaction = new transaction();
 
@@ -305,14 +301,36 @@ class TransactionController extends Controller
                     // DB::commit();
                     //recursive function to crawl to members.
                     // if($member['parent']->role_id!=3){
-                        if($comm_rate==0){
-                            return $this->assignCommission($parent,$newmemberid,200);
-                        }elseif($comm_rate==10){
-                            return $this->assignCommission($parent,$newmemberid,$comm_rate);
+                        //check match bonus
+                        if($comm_rate>50){
+                            $this->findMatch($parent->id,$newmemberid,500);
+                        }elseif($comm_rate>20){
+                            $this->findMatch($parent->id,$newmemberid,400);
+                        }elseif($comm_rate>10){
+                            $this->findMatch($parent->id,$newmemberid,300);
+                        }elseif($comm_rate==0){
+                            $this->findMatch($parent->id,$newmemberid,500);
                         }
                         else{
-                            return $this->assignCommission($parent,$newmemberid,$comm_rate/2);
+                            
+                            if($step==8){
+                                $rate=100;
+                            }else{
+                                $rate = 200;
+                            }
+                            $this->findMatch($parent->id,$newmemberid,$rate);
                         }
+                        //assign commission
+                        if($comm_rate==0){
+                            return $this->assignCommission($parent,$newmemberid,200,$step);
+                        }elseif($comm_rate==10){
+                            return $this->assignCommission($parent,$newmemberid,$comm_rate,$step);
+                        }
+                        else{
+                            return $this->assignCommission($parent,$newmemberid,$comm_rate/2,$step);
+                        }
+
+                        
                     // }
                     return true;
                 }else{
