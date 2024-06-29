@@ -183,7 +183,7 @@ class TransactionController extends Controller
                         //get other members of parent id
                         $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
                         //if members is 3 give match bonus
-                        
+
                         
                         //send email confirmation
                         $this->sendPaymentConfirmationEmail($data["transaction_id"],$payment_for,$product);
@@ -230,7 +230,40 @@ class TransactionController extends Controller
             throw $e;
         }
     }
+    protected function findMatch($parentid,$newmemberid,$comm_rate){
+        $user = Auth::user();
+        $members = User::where('parent_referral',$parentid)->where("status",1)->count();
+        if($members==3){
+            $commission = new UserCommission();
+            // $transaction = new transaction();
 
+            $transaction = new Transaction;
+            $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
+            $transaction->description = "Commission distribution";
+            $transaction->payment_method = 0;
+            $transaction->amount = $comm_rate;
+            $transaction->proof_url = null;
+            $transaction->processed_by = $user->id;
+            $transaction->created_by=$user->id;
+            $transaction->user_id = $parent->id;
+            $transaction->trans_type = 7;//match bonus
+            $transaction->status = 1;
+            $transaction->commission_rate = 0;
+            $transaction->commission_from = $newmemberid;
+            $transaction->cleared=false;
+            $transaction->withdrawable=false;
+            $transaction->save();
+
+            // $commission->commission_level = 0;
+            // $commission->user_id = $parent->id;
+            // $commission->commission_from = $newmemberid;
+            // $commission->status=1;
+            // $commission->comm_rate = 0;
+            // $commission->comm_amt = $comm_rate;
+            // $commission->cleared=false;
+            // $commission->save();
+        }
+    }
     protected function assignCommission($member,$newmemberid,$comm_rate){
         // DB::beginTransaction();
         try{
@@ -241,7 +274,12 @@ class TransactionController extends Controller
                 return false;
             }else{
                 if($parent!=null){
-                    
+                    if($comm_rate>50){
+                        $this->findMatch($member->parent_referral,$newmemberid,500);
+                    }else{
+
+                        $this->findMatch($member->parent_referral,$newmemberid,400);
+                    }
                     $commission = new UserCommission();
                     // $transaction = new transaction();
 
