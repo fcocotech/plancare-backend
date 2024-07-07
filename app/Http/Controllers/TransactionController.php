@@ -250,8 +250,8 @@ class TransactionController extends Controller
             $transaction->status = 1;
             $transaction->commission_rate = 0;
             $transaction->commission_from = $newmemberid;
-            $transaction->cleared=false;
-            $transaction->withdrawable=false;
+            $transaction->cleared=1;
+            $transaction->withdrawable=1;
             $transaction->save();
             
 
@@ -283,7 +283,7 @@ class TransactionController extends Controller
                     $transaction->user_id = $parent->id;
                     $transaction->trans_type = 2;//commission
                     $transaction->status = 1;
-                    $transaction->commission_rate = $comm_rate;
+                    $transaction->commission_rate = 0.0;
                     $transaction->commission_from = $newmemberid;
                     $transaction->cleared=false;
                     $transaction->withdrawable=false;
@@ -293,7 +293,7 @@ class TransactionController extends Controller
                     $commission->user_id = $parent->id;
                     $commission->commission_from = $newmemberid;
                     $commission->status=1;
-                    $commission->comm_rate = 0;
+                    $commission->comm_rate = 0.0;
                     $commission->comm_amt = $comm_rate;
                     $commission->cleared=false;
                     $commission->save();
@@ -321,14 +321,18 @@ class TransactionController extends Controller
                             $this->findMatch($parent->id,$newmemberid,$rate);
                         }
                         //assign commission
-                        if($comm_rate==0){
-                            return $this->assignCommission($parent,$newmemberid,200,$step);
-                        }elseif($comm_rate==10){
-                            return $this->assignCommission($parent,$newmemberid,$comm_rate,$step);
+                        if($step<11){
+                            if($comm_rate==0){
+                                return $this->assignCommission($parent,$newmemberid,200,$step);
+                            }elseif($comm_rate==10){
+                                return $this->assignCommission($parent,$newmemberid,$comm_rate,$step);
+                            }
+                        }else{
+                            return $this->assignCommission($parent,$newmemberid,0,$step);
                         }
-                        else{
-                            return $this->assignCommission($parent,$newmemberid,$comm_rate/2,$step);
-                        }
+                        // else{
+                        //     return $this->assignCommission($parent,$newmemberid,$comm_rate/2,$step);
+                        // }
 
                         
                     // }
@@ -576,9 +580,9 @@ class TransactionController extends Controller
             // $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
             $total_earnings = $earnings->sum('amount');
 
-            if($request->points_to_withdraw < 5000){
-                return response()->json(['status' => false, 'message' => 'Withdrawable amount limit is 5,000.00']);
-            }
+            // if($request->points_to_withdraw < 1000){
+            //     return response()->json(['status' => false, 'message' => 'Withdrawable amount limit is 1,000.00']);
+            // }
 
             if($request->points_to_withdraw > $total_earnings){
                 return response()->json(['status' => false, 'message' => 'Points to withdraw should not exceed the total withdrawable points.']);
