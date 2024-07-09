@@ -33,9 +33,10 @@ class UserController extends Controller
         //                         DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'1\') as total_active')
         //                     );
         
-        $totalUsersQuery        = User::with(['productPurchases.product.category'])->where('status', '!=', 3)->where('is_admin', 0);
-        $totalPendingUsersQuery = User::with(['productPurchases.product.category'])->where('status', 2)->where('is_admin', 0);
-        $totalActiveUsersQuery  = User::with(['productPurchases.product.category'])->where('status', 1)->where('is_admin', 0);
+        $totalUsersQuery                = User::with(['productPurchases.product.category'])->where('status', '!=', 3)->where('is_admin', 0);
+        $totalPendingUsersQuery         = User::with(['productPurchases.product.category'])->where('status', 2)->whereNull('proof_url')->where('is_admin', 0);
+        $totalPendingApprovalUsersQuery = User::with(['productPurchases.product.category'])->where('status', 2)->whereNotNull('proof_url')->where('is_admin', 0);
+        $totalActiveUsersQuery          = User::with(['productPurchases.product.category'])->where('status', 1)->where('is_admin', 0);
 
         $categoryId = $request->category_id;
 
@@ -46,6 +47,9 @@ class UserController extends Controller
             $totalPendingUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
                 $query->where('id', $categoryId);
             });
+            $totalPendingApprovalUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
             $totalActiveUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
                 $query->where('id', $categoryId);
             });
@@ -54,6 +58,7 @@ class UserController extends Controller
         $totals = (object) [
             'total_users' => $totalUsersQuery->count(),
             'pending_users' => $totalPendingUsersQuery->count(),
+            'pending_approval' => $totalPendingApprovalUsersQuery->count(),
             'total_active' => $totalActiveUsersQuery->count()
         ];
 
@@ -80,7 +85,18 @@ class UserController extends Controller
     }
 
     public function get(Request $request) {
-        $users = array("profile"=>User::with(['members', 'productPurchases.product.category'])->select('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.name as referredbyname','rf.referral_code as referredby','users.cleared')
+        $users = User::with(['members', 'productPurchases.product.category'])
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.referral_code',
+                'users.status',
+                'users.role_id',
+                'rf.name as referredbyname',
+                'rf.referral_code as referredby',
+                'users.cleared'
+            )
             ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
             ->selectRaw('(SELECT p.name FROM product_purchases pp
                             LEFT JOIN products p ON pp.product_id = p.id
@@ -95,32 +111,46 @@ class UserController extends Controller
             ->selectRaw('(SELECT pp.id FROM product_purchases pp
                             WHERE pp.purchased_by = users.id AND pp.purchase_type=1
                         ) as product_purchase_id')
-            // ->selectRaw('(SELECT r.referral_code FROM users r WHERE r.id = users.parent_referral) sa referred_by')
             ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
             ->leftJoin('transactions as tr', function ($join) {
                 $join->on('tr.user_id', '=', 'users.id')
                     ->where('tr.trans_type', '2')->whereNull('tr.deleted_at');
             })
             ->where('users.is_admin', '!=', 1)
-            ->where('users.role_id', '!=', 3)
-        );
-
-        if ($request->filter!=null) {
-           $users["profile"]->where('users.status', $request->filter);//gets all active user
+            ->where('users.role_id', '!=', 3);
+    
+        if ($request->filter != null) {
+            $users->where('users.status', $request->filter);
         }
-
+    
+        if ($request->approval != null) {
+            $users->whereNotNull('users.proof_url');
+        } else {
+            $users->whereNull('users.proof_url');
+        }
+    
         $categoryId = $request->category_id;
-
+    
         if ($categoryId != 0) {
-            $users["profile"]->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+            $users->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
                 $query->where('id', $categoryId);
             });
         }
-
-        $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.referral_code','rf.name','users.cleared')->get();
-
-        return response()->json(['status' => true, 'users' => $users["profile"], 'params' => $request->filter]);
-    }
+    
+        $users = $users->groupBy(
+            'users.id',
+            'users.name',
+            'users.email',
+            'users.referral_code',
+            'users.status',
+            'users.role_id',
+            'rf.referral_code',
+            'rf.name',
+            'users.cleared'
+        )->get();
+    
+        return response()->json(['status' => true, 'users' => $users, 'params' => $request->filter]);
+    }    
 
     public function getInfluencers(Request $request) {
         $users = array("profile"=>
