@@ -583,6 +583,7 @@ class UserController extends Controller
             $user->sec_q3           = $request->sec_q3;
             $user->sec_q4           = $request->sec_q4;
             $user->sec_q5           = $request->sec_q5;
+            $user->proof_method     = $request->proof_method;
             if (!preg_match('/\*/', $request->sec_q1_ans)) {
                 $user->sec_q1_ans = $request->sec_q1_ans;
             }
