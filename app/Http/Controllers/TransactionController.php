@@ -27,10 +27,10 @@ class TransactionController extends Controller
         $user = Auth::user();
 
         if($user->id==1){
-            $earnings = Transaction::with(['commission_from'])->where('trans_type', '2')->whereNotIn('withdrawable', [2,3,4,5])->get();
+            $earnings = Transaction::with(['commission_from'])->whereIn('trans_type', ['2','5'])->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
-            $cleared = Transaction::with(['commission_from'])->where('trans_type', '2')->where('cleared',1)->sum('amount');
-            $withdrawable = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1)->get();
+            $cleared = Transaction::with(['commission_from'])->whereIn('trans_type', ['2','5'])->where('cleared',1)->sum('amount');
+            $withdrawable = Transaction::with(['commission_from'])->whereIn('trans_type', ['2','5'])->where('withdrawable',1)->get();
             $withdrawal_request = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
 
             $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
@@ -38,10 +38,10 @@ class TransactionController extends Controller
             
             $total_earnings = $earnings->sum('amount');
         }else{
-            $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->whereNotIn('withdrawable', [2,3,4,5])->get();
+            $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->whereIn('trans_type', ['2','5'])->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
-            $cleared = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1)->sum('amount');
-            $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
+            $cleared = Transaction::with(['commission_from'])->where('user_id', $user->id)->whereIn('trans_type', ['2','5'])->where('cleared',1)->sum('amount');
+            $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->whereIn('trans_type', ['2','5'])->where('withdrawable',1)->get();
             $withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
             $total_winthdrawal = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->where('withdrawable',5)->get();
             $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
@@ -177,8 +177,8 @@ class TransactionController extends Controller
                         }
 
                      
-                        $this->assignCommission($payment_for,$payment_for->id,0,0);
-
+                        $this->assignCommission($payment_for,$payment_for->id,0,1);
+                        // $this->findMatch($parent->id,$newmemberid,500);
                       
                         //get other members of parent id
                         // $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
@@ -246,7 +246,7 @@ class TransactionController extends Controller
             $transaction->processed_by = $user->id;
             $transaction->created_by=$user->id;
             $transaction->user_id = $parentid;
-            $transaction->trans_type = 2;//match bonus
+            $transaction->trans_type = 5;//match bonus
             $transaction->status = 1;
             $transaction->commission_rate = 0;
             $transaction->commission_from = $newmemberid;
@@ -285,8 +285,8 @@ class TransactionController extends Controller
                     $transaction->status = 1;
                     $transaction->commission_rate = 0.0;
                     $transaction->commission_from = $newmemberid;
-                    $transaction->cleared=false;
-                    $transaction->withdrawable=false;
+                    $transaction->cleared=1;
+                    $transaction->withdrawable=1;
                     $transaction->save();
 
                     $commission->commission_level = 0;
@@ -295,39 +295,58 @@ class TransactionController extends Controller
                     $commission->status=1;
                     $commission->comm_rate = 0.0;
                     $commission->comm_amt = $comm_rate;
-                    $commission->cleared=false;
+                    $commission->cleared=1;
                     $commission->save();
                                 
                     // DB::commit();
                     //recursive function to crawl to members.
                     // if($member['parent']->role_id!=3){
-                        //check match bonus
-                        if($comm_rate>50){
-                            $this->findMatch($parent->id,$newmemberid,500);
-                        }elseif($comm_rate>20){
-                            $this->findMatch($parent->id,$newmemberid,400);
-                        }elseif($comm_rate>10){
-                            $this->findMatch($parent->id,$newmemberid,300);
-                        }elseif($comm_rate==0){
-                            $this->findMatch($parent->id,$newmemberid,500);
-                        }
-                        else{
+
+                        //check match bonus. Check first if valid
+                        // if($comm_rate>50){
+                        //     $this->findMatch($parent->id,$newmemberid,500);
+                        // }elseif($comm_rate>20){
+                        //     $this->findMatch($parent->id,$newmemberid,400);
+                        // }elseif($comm_rate>10){
+                        //     $this->findMatch($parent->id,$newmemberid,300);
+                        // }elseif($comm_rate==0){
+                        //     $this->findMatch($parent->id,$newmemberid,500);
+                        // }
+                        // else{
                             
-                            if($step==8){
-                                $rate=100;
-                            }else{
-                                $rate = 200;
-                            }
-                            $this->findMatch($parent->id,$newmemberid,$rate);
-                        }
+                        //     if($step==8){
+                        //         $rate=100;
+                        //     }else{
+                        //         $rate = 200;
+                        //     }
+                        //     $this->findMatch($parent->id,$newmemberid,$rate);
+                        // }
                         //assign commission
-                        if($step<11){
-                            if($comm_rate==0){
+                        if($step>1 && $step<11){
+                            if($step==2){
+                                $this->findMatch($parent->id,$newmemberid,500);
                                 return $this->assignCommission($parent,$newmemberid,200,$step);
-                            }elseif($comm_rate==10){
-                                return $this->assignCommission($parent,$newmemberid,$comm_rate,$step);
+                            }elseif($step==3){
+                                $this->findMatch($parent->id,$newmemberid,500);
+                                return $this->assignCommission($parent,$newmemberid,100,$step);
+                            }elseif($step==4){
+                                $this->findMatch($parent->id,$newmemberid,400);
+                                return $this->assignCommission($parent,$newmemberid,50,$step);
+                            }elseif($step==5){
+                                $this->findMatch($parent->id,$newmemberid,300);
+                                return $this->assignCommission($parent,$newmemberid,20,$step);
+                                
+                            }elseif($step==6){
+                                $this->findMatch($parent->id,$newmemberid,200);
+                                return $this->assignCommission($parent,$newmemberid,10,$step);
+                            }else{
+                                $this->findMatch($parent->id,$newmemberid,100);
+                                return $this->assignCommission($parent,$newmemberid,10,$step);
                             }
                         }else{
+                            if($step==1){
+                                $this->findMatch($parent->id,$newmemberid,500);
+                            }
                             return $this->assignCommission($parent,$newmemberid,0,$step);
                         }
                         // else{
@@ -576,7 +595,7 @@ class TransactionController extends Controller
         try{
             $user = Auth::user();
             // check total earnins or validate
-            $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->get();
+            $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->whereIn('trans_type', ['2','5'])->get();
             // $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
             $total_earnings = $earnings->sum('amount');
 
