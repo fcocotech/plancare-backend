@@ -44,24 +44,35 @@ class TransactionController extends Controller
 			// $earnings = UserCommission::where('user_id', $user->id)->get();
 			$clearedQuery = Transaction::with(['commission_from'])->where('trans_type', '2')->where('cleared',1);
 
-			$withdrawable = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1)->get();
-			$withdrawal_request = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
+			$withdrawableQuery = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1);
+			$withdrawal_requestQuery = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5);
+			$points_purchaseQuery = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1]);
 
-			$points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
 			$total_withdrawal = Transaction::with(['commission_from'])->where('trans_type', '3')->where('withdrawable',5)->get();            
 		}else{
 			$earningsQuery = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->whereNotIn('withdrawable', [2,3,4,5]);
 			// $earnings = UserCommission::where('user_id', $user->id)->get();
 			$clearedQuery = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1);
 
-			$withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
-			$withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
-			$total_withdrawal = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->where('withdrawable',5)->get();
+			$withdrawablQuerye = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1);
+			$withdrawal_requestQuery = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5);
+			$total_withdrawalQuery = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->where('withdrawable',5);
+
 			$points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('user_id', $user->id)->where('payment_method', 6)->whereIn('status', [0,1])->get();
 		}
 
 		if ($categoryId != 0) {
 			$earningsQuery->whereHas('user.productPurchases.product.category', function ($query) use ($categoryId) {
+				$query->where('id', $categoryId);
+			});
+
+			$withdrawableQuery->whereHas('user.productPurchases.product.category', function ($query) use ($categoryId) {
+				$query->where('id', $categoryId);
+			});
+			$withdrawal_requestQuery->whereHas('user.productPurchases.product.category', function ($query) use ($categoryId) {
+				$query->where('id', $categoryId);
+			});
+			$points_purchaseQuery->whereHas('user.productPurchases.product.category', function ($query) use ($categoryId) {
 				$query->where('id', $categoryId);
 			});
 
@@ -73,6 +84,10 @@ class TransactionController extends Controller
 		$total_earnings = $earningsQuery->get()->sum('amount');
 		$earnings = $earningsQuery->with(['user.productPurchases.product.category'])->get();
 		$cleared = $clearedQuery->sum('amount');
+
+		$withdrawable = $withdrawableQuery->get();
+		$withdrawal_request = $withdrawal_requestQuery->get();
+		$points_purchase = $points_purchaseQuery->get();
 
 		return response()->json([
 			'status' => true,
