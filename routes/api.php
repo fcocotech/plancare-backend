@@ -71,6 +71,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/transaction/cleartransactions', 'App\Http\Controllers\TransactionController@APIcleartransactions');
     Route::post('/transaction/withdrawal-requests', 'App\Http\Controllers\TransactionController@withdrawalRequest');
     Route::post('/transaction/buy/product/{qtytobuy}', 'App\Http\Controllers\TransactionController@buyProduct');
+    Route::post('/transaction/findmatch', 'App\Http\Controllers\TransactionController@APIfindMatch');
     // Route::post('/transaction/commission', 'App\Http\Controllers\TransactionController@APIcommissionDistribution2');
 
     Route::post('/email/paymentconfirm', 'App\Http\Controllers\TransactionController@sendPaymentConfirmationEmail');

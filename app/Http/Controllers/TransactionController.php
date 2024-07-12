@@ -233,7 +233,7 @@ class TransactionController extends Controller
     protected function findMatch($parentid,$newmemberid,$comm_rate){
         $user = Auth::user();
         $members = User::where('parent_referral',$parentid)->where("status",1)->count();
-        if($members==3){
+        if($members>2){
             // $commission = new UserCommission();
             // $transaction = new transaction();
 
@@ -253,9 +253,37 @@ class TransactionController extends Controller
             $transaction->cleared=1;
             $transaction->withdrawable=1;
             $transaction->save();
-            
-
         }
+    }
+
+    public function APIfindMatch(Request $request){
+        $user = Auth::user();
+        $members = User::where('parent_referral',$request->parentid)->where("status",1)->count();
+        $status=false;
+        if($members>2){
+            // $commission = new UserCommission();
+            // $transaction = new transaction();
+
+            // $transaction = new Transaction;
+            // $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
+            // $transaction->description = "Match Bonus Commission";
+            // $transaction->payment_method = 0;
+            // $transaction->amount = $request->comm_rate;
+            // $transaction->proof_url = null;
+            // $transaction->processed_by = $user->id;
+            // $transaction->created_by=$user->id;
+            // $transaction->user_id = $request->parentid;
+            // $transaction->trans_type = 5;//match bonus
+            // $transaction->status = 1;
+            // $transaction->commission_rate = 0;
+            // $transaction->commission_from = $request->newmemberid;
+            // $transaction->cleared=1;
+            // $transaction->withdrawable=1;
+            // $transaction->save();
+            $status=true;
+        }
+
+        return response()->json(['members' => $members,'parent'=>$request->parentid,'status'=>$status]); 
     }
     protected function assignCommission($member,$newmemberid,$comm_rate,$step){
         // DB::beginTransaction();
