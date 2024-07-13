@@ -403,7 +403,7 @@ class UserController extends Controller
                 $user->delete();
             }
             
-            Transaction::where('commission_from',$user->id)->whereIn("trans_type",[2,5])->update(['cleared'=>0,'withdrawable'=>0]);
+            // Transaction::where('commission_from',$user->id)->whereIn("trans_type",[2,5])->update(['cleared'=>0,'withdrawable'=>0]);
             Transaction::where('commission_from',$user->id)->whereIn("trans_type",[2,5])->delete();
         
             if($user->role_id!=3){//if not an influencer

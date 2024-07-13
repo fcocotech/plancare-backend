@@ -128,7 +128,7 @@ class TransactionController extends Controller
                 $payment_for = User::with('parent')->where('id',$request->id)->where('status',2)->first();//get the user info of the member
                 //double check for member count
                 if($payment_for['parent']->role_id!=3){
-                    if($this->findChildCount($payment_for->parent_referral)>=4){
+                    if($this->findChildCount($payment_for->parent_referral)>=3){
                         return response()->json(['status' => false,'message' => "Referral code is invalid. Slot is already full. Pls use another code"]); 
                     }
                 }
@@ -177,7 +177,7 @@ class TransactionController extends Controller
                         }
 
                      
-                        $this->assignCommission($payment_for,$payment_for->id,0,1);
+                        $this->assignCommission($payment_for,$payment_for->id,0,0);
                         // $this->findMatch($parent->id,$newmemberid,500);
                       
                         //get other members of parent id
@@ -231,9 +231,9 @@ class TransactionController extends Controller
         }
     }
     protected function findMatch($parentid,$newmemberid,$comm_rate){
-        $user = Auth::user();
-        $members = User::where('parent_referral',$parentid)->where("status",1)->count();
-        if($members>2){
+        // $user = Auth::user();
+        // $members = User::where('parent_referral',$parentid)->where("status",1)->count();
+        // if($members>2){
             // $commission = new UserCommission();
             // $transaction = new transaction();
 
@@ -253,7 +253,7 @@ class TransactionController extends Controller
             $transaction->cleared=1;
             $transaction->withdrawable=1;
             $transaction->save();
-        }
+        // }
     }
 
     public function APIfindMatch(Request $request){
@@ -350,30 +350,46 @@ class TransactionController extends Controller
                         //     $this->findMatch($parent->id,$newmemberid,$rate);
                         // }
                         //assign commission
+                        
                         if($step>1 && $step<11){
                             if($step==2){
-                                $this->findMatch($parent->id,$newmemberid,500);
+                                if($this->findChildCount($parent->id)>2){
+                                    $this->findMatch($parent->parent_referral,$parent->id,500);
+                                }
+                               
                                 return $this->assignCommission($parent,$newmemberid,200,$step);
                             }elseif($step==3){
-                                $this->findMatch($parent->id,$newmemberid,500);
+                                if($this->findChildCount($parent->id)>2){
+                                    $this->findMatch($parent->parent_referral,$parent->id,500);
+                                }
                                 return $this->assignCommission($parent,$newmemberid,100,$step);
                             }elseif($step==4){
-                                $this->findMatch($parent->id,$newmemberid,400);
+                                if($this->findChildCount($parent->id)>2){
+                                    $this->findMatch($parent->parent_referral,$parent->id,400);
+                                }
                                 return $this->assignCommission($parent,$newmemberid,50,$step);
                             }elseif($step==5){
-                                $this->findMatch($parent->id,$newmemberid,300);
+                                if($this->findChildCount($parent->id)>2){
+                                    $this->findMatch($parent->parent_referral,$parent->id,300);
+                                }
                                 return $this->assignCommission($parent,$newmemberid,20,$step);
                                 
                             }elseif($step==6){
-                                $this->findMatch($parent->id,$newmemberid,200);
+                                if($this->findChildCount($parent->id)>2){
+                                    $this->findMatch($parent->parent_referral,$parent->id,200);
+                                }
                                 return $this->assignCommission($parent,$newmemberid,10,$step);
                             }else{
-                                $this->findMatch($parent->id,$newmemberid,100);
+                                if($this->findChildCount($parent->id)>2){
+                                    $this->findMatch($parent->parent_referral,$parent->id,100);
+                                }
                                 return $this->assignCommission($parent,$newmemberid,10,$step);
                             }
                         }else{
                             if($step==1){
-                                $this->findMatch($parent->id,$newmemberid,500);
+                                if($this->findChildCount($parent->id)>2){
+                                    $this->findMatch($parent->parent_referral,$parent->id,500);
+                                }
                             }
                             return $this->assignCommission($parent,$newmemberid,0,$step);
                         }
