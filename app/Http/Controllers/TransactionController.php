@@ -178,7 +178,7 @@ class TransactionController extends Controller
 
                      
                         $this->assignCommission($payment_for,$payment_for->id,0,1);
-                        // $this->findMatch($payment_for->parent_referral,$payment_for,500,1);
+                        $this->findMatch($payment_for->parent_referral,$payment_for,500,1);
                         
                         //get other members of parent id
                         // $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
