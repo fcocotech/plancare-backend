@@ -178,6 +178,7 @@ class TransactionController extends Controller
 
                      
                         $this->assignCommission($payment_for,$payment_for->id,0,1);
+                        $this->findMatch($payment_for->parent_referral, $payment_for->id, 500, 1);
                         //$this->findMatch($payment_for->parent_referral,$payment_for,500,1);
                         
                         //get other members of parent id
@@ -230,19 +231,19 @@ class TransactionController extends Controller
             throw $e;
         }
     }
-    protected function findMatch($parentid,$newmember,$comm_rate,$step){
+    protected function findMatch($parentid, $newmemberid, $comm_rate, $step){
         $user = Auth::user();
         $members = User::where('parent_referral',$parentid)->where("status",1)->get(['id']);
         $parent = User::where('id',$parentid)->where("status",1)->first();
         
-        $match_trans=Transaction::whereIn('commission_from',$members)->where('trans_type',5)->where('amount',$comm_rate)->count();
+        $match_trans=Transaction::whereIn('commission_from',$members)->where('user_id', $parentid)->where('trans_type',5)->where('amount',$comm_rate)->count();
         
         if($parentid!=1){
             if($match_trans==0){
                 if($this->findChildCount($parentid)>2){
                     $transaction = new Transaction;
                     $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
-                    $transaction->description = "Match Bonus Commission";
+                    $transaction->description = "Match Bonus Commission Level: ".$step;
                     $transaction->payment_method = 0;
                     $transaction->amount = $comm_rate;
                     $transaction->proof_url = null;
@@ -252,25 +253,27 @@ class TransactionController extends Controller
                     $transaction->trans_type = 5;//match bonus
                     $transaction->status = 1;
                     $transaction->commission_rate = 0;
-                    $transaction->commission_from = $newmember->id;
+                    $transaction->commission_from = $newmemberid;
                     $transaction->cleared=1;
                     $transaction->withdrawable=1;
                     $transaction->save();
 
-                    $step=$step+1;
+                    // $match_bonus_amount = 100; // default\.
+                    $step = $step+1;
+
                     if($step>1 && $step<11){
-                        if($step==2){
-                            return $this->findMatch($parent->parent_referral,$parent,200,$step);
-                        }elseif($step==3){
-                            return $this->findMatch($parent->parent_referral,$parent,100,$step);
-                        }elseif($step==4){
-                            return $this->findMatch($parent->parent_referral,$parent,50,$step);
-                        }elseif($step==5){
-                            return $this->findMatch($parent->parent_referral,$parent,20,$step);
-                        }elseif($step==6){
-                            return $this->findMatch($parent->parent_referral,$parent,10,$step);
+                        if(($step*1) == 2 || ($step*1) == 3){
+                            return $this->findMatch($parent->parent_referral, $newmemberid, 500, $step);
+                        }elseif(($step*1) == 3){
+                            return $this->findMatch($parent->parent_referral, $newmemberid, 500, $step);
+                        }elseif(($step*1)== 4){
+                            return $this->findMatch($parent->parent_referral, $newmemberid, 400, $step);
+                        }elseif(($step*1)==5){
+                            return $this->findMatch($parent->parent_referral, $newmemberid, 300, $step);
+                        }elseif(($step*1)==6){
+                            return $this->findMatch($parent->parent_referral, $newmemberid, 200, $step);
                         }else{
-                            return $this->findMatch($parent->parent_referral,$parent,10,$step);
+                            return $this->findMatch($parent->parent_referral, $newmemberid, 100, $step);
                         }
                     }
                     return true;
@@ -307,7 +310,7 @@ class TransactionController extends Controller
         //         $transaction->user_id = $parentid;
         //         $transaction->trans_type = 5;//match bonus
         //         $transaction->status = 1;
-        //         $transaction->commission_rate = 0;
+        //         $transaction->commission_rate = 0i;
         //         $transaction->commission_from = $newmember;
         //         $transaction->cleared=1;
         //         $transaction->withdrawable=1;
@@ -412,51 +415,22 @@ class TransactionController extends Controller
                     
                         //assign commission
                         $step++;
+                        
                         if($step>1 && $step<11){
                             if($step==2){
-                                if($this->findChildCount($parentid)>2){
-                                    $this->findMatchV2($parentid, $newmemberid, 500);
-                                }
-                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,200,$step);
                             }elseif($step==3){
-                                if($this->findChildCount($parentid)>2){
-                                    $this->findMatchV2($parentid, $newmemberid, 500);
-                                }
-                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,100,$step);
                             }elseif($step==4){
-                                if($this->findChildCount($parentid)>2){
-                                    $this->findMatchV2($parentid, $newmemberid, 400);
-                                }
-                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,50,$step);
                             }elseif($step==5){
-                                if($this->findChildCount($parentid)>2){
-                                    $this->findMatchV2($parentid, $newmemberid, 300);
-                                }
-                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,20,$step);
                             }elseif($step==6){
-                                if($this->findChildCount($parentid)>2){
-                                    $this->findMatchV2($parentid, $newmemberid, 200);
-                                }
-                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,10,$step);
                             }else{
-                                if($this->findChildCount($parentid)>2){
-                                    $this->findMatchV2($parentid, $newmemberid, 100);
-                                }
-                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,10,$step);
                             }
                         }else{
-                            if($step == 1){
-                                if($this->findChildCount($parentid)>2){
-                                    $this->findMatchV2($parentid, $newmemberid, 500);
-                                } 
-                            }
-                            // $step=$step+1;
                             return $this->assignCommission($parent,$newmemberid,0,$step);
                         }
                        
