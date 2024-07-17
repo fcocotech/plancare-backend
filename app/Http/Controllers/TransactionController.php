@@ -27,14 +27,14 @@ class TransactionController extends Controller
         $user = Auth::user();
 
         if($user->id==1){
-            $earnings = Transaction::with(['commission_from'])->whereIn('trans_type', ['2','5'])->whereNotIn('withdrawable', [2,3,4,5])->get();
+            $earnings = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
-            $cleared = Transaction::with(['commission_from'])->whereIn('trans_type', ['2','5'])->where('cleared',1)->sum('amount');
-            $withdrawable = Transaction::with(['commission_from'])->whereIn('trans_type', ['2','5'])->where('withdrawable',1)->get();
-            $withdrawal_request = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
+            $cleared = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->where('cleared',1)->sum('amount');
+            $withdrawable = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->where('withdrawable',1)->get();
+            $withdrawal_request = Transaction::with(['commission_from','user'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
 
-            $points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
-            $total_winthdrawal = Transaction::with(['commission_from'])->where('trans_type', '3')->where('withdrawable',5)->get();
+            $points_purchase = Transaction::with(['commission_from','user'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
+            $total_winthdrawal = Transaction::with(['commission_from','user'])->where('trans_type', '3')->where('withdrawable',5)->get();
             
             $total_earnings = $earnings->sum('amount');
         }else{
@@ -178,7 +178,7 @@ class TransactionController extends Controller
 
                      
                         $this->assignCommission($payment_for,$payment_for->id,0,1);
-                        $this->findMatch($payment_for->parent_referral,$payment_for,500,1);
+                        //$this->findMatch($payment_for->parent_referral,$payment_for,500,1);
                         
                         //get other members of parent id
                         // $members = User::where('parent_referral',$payment_for->parent_referral)->where("status",1)->get(['id']);
@@ -373,17 +373,17 @@ class TransactionController extends Controller
         // DB::beginTransaction();
         try{
             // $newmemberid=$member->id;
-            
+          
             $user = Auth::user();
             $parent = User::find($member->parent_referral);
+            $parentid=$parent->id;
             if($parent->id==1){
                 return false;
             }else{
                 if($parent!=null){
                    
                     $commission = new UserCommission();
-                    // $transaction = new transaction();
-
+                    
                     $transaction = new Transaction;
                     $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
                     $transaction->description = "Commission distribution";
@@ -411,43 +411,43 @@ class TransactionController extends Controller
                     $commission->save();
                     
                         //assign commission
-                        
+                        $step++;
                         if($step>1 && $step<11){
                             if($step==2){
                                 if($this->findChildCount($parentid)>2){
                                     $this->findMatchV2($parentid, $newmemberid, 500);
                                 }
-                                $step=$step+1;
+                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,200,$step);
                             }elseif($step==3){
                                 if($this->findChildCount($parentid)>2){
                                     $this->findMatchV2($parentid, $newmemberid, 500);
                                 }
-                                $step=$step+1;
+                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,100,$step);
                             }elseif($step==4){
                                 if($this->findChildCount($parentid)>2){
                                     $this->findMatchV2($parentid, $newmemberid, 400);
                                 }
-                                $step=$step+1;
+                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,50,$step);
                             }elseif($step==5){
                                 if($this->findChildCount($parentid)>2){
                                     $this->findMatchV2($parentid, $newmemberid, 300);
                                 }
-                                $step=$step+1;
+                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,20,$step);
                             }elseif($step==6){
                                 if($this->findChildCount($parentid)>2){
                                     $this->findMatchV2($parentid, $newmemberid, 200);
                                 }
-                                $step=$step+1;
+                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,10,$step);
                             }else{
                                 if($this->findChildCount($parentid)>2){
                                     $this->findMatchV2($parentid, $newmemberid, 100);
                                 }
-                                $step=$step+1;
+                                // $step=$step+1;
                                 return $this->assignCommission($parent,$newmemberid,10,$step);
                             }
                         }else{
@@ -456,7 +456,7 @@ class TransactionController extends Controller
                                     $this->findMatchV2($parentid, $newmemberid, 500);
                                 } 
                             }
-                            $step=$step+1;
+                            // $step=$step+1;
                             return $this->assignCommission($parent,$newmemberid,0,$step);
                         }
                        
