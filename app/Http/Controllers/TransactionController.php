@@ -236,10 +236,10 @@ class TransactionController extends Controller
         $members = User::where('parent_referral',$parentid)->where("status",1)->get(['id']);
         $parent = User::where('id',$parentid)->where("status",1)->first();
         
-        $match_trans=Transaction::whereIn('commission_from',$members)->where('user_id', $parentid)->where('trans_type',5)->where('amount',$comm_rate)->count();
+        // $match_trans=Transaction::whereIn('commission_from',$members)->where('user_id', $parentid)->where('trans_type',5)->where('amount',$comm_rate)->count();
         
         if($parentid!=1){
-            if($match_trans==0){
+            // if($match_trans==0){
                 if($this->findChildCount($parentid)>2){
                     $transaction = new Transaction;
                     $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
@@ -280,10 +280,10 @@ class TransactionController extends Controller
                 }else{
                     return false;
                 }
-            }
-            else{
-                return false;
-            }
+            // }
+            // else{
+            //     return false;
+            // }
         }
 
         return false;
@@ -295,51 +295,36 @@ class TransactionController extends Controller
         $members = User::where('parent_referral',$request->parentid)->where("status",1)->get(['id']);
         $parent = User::where('id',$request->parentid)->where("status",1)->first();
         
-        $match_trans=Transaction::whereIn('commission_from',$members)->where('trans_type',5)->count();
+        // $match_trans=Transaction::whereIn('commission_from',$members)->where('trans_type',5)->count();
         
         // if($match_trans!=0){
-        //     if($this->findChildCount($payment_for->parent_referral)>2){
-        //         $transaction = new Transaction;
-        //         $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
-        //         $transaction->description = "Match Bonus Commission";
-        //         $transaction->payment_method = 0;
-        //         $transaction->amount = $comm_rate;
-        //         $transaction->proof_url = null;
-        //         $transaction->processed_by = $user->id;
-        //         $transaction->created_by=$user->id;
-        //         $transaction->user_id = $parentid;
-        //         $transaction->trans_type = 5;//match bonus
-        //         $transaction->status = 1;
-        //         $transaction->commission_rate = 0i;
-        //         $transaction->commission_from = $newmember;
-        //         $transaction->cleared=1;
-        //         $transaction->withdrawable=1;
-        //         $transaction->save();
+            if($this->findChildCount($payment_for->parent_referral)>2){
+                print($step . " ");
+                print($comm_rate);
+                $step=$step+1;
+                if($step>1 && $step<11){
+                    if($step==2){
+                        return $this->findMatch($parent->parent_referral,$parent,200,$step);
+                    }elseif($step==3){
+                        return $this->findMatch($parent->parent_referral,$parent,100,$step);
+                    }elseif($step==4){
+                        return $this->findMatch($parent->parent_referral,$parent,50,$step);
+                    }elseif($step==5){
+                        return $this->findMatch($parent->parent_referral,$parent,20,$step);
+                    }elseif($step==6){
+                        return $this->findMatch($parent->parent_referral,$parent,10,$step);
+                    }else{
+                        return $this->findMatch($parent->parent_referral,$parent,10,$step);
+                    }
+                }
 
-        //         $step=$step+1;
-        //         if($step>1 && $step<11){
-        //             if($step==2){
-        //                 return $this->findMatch($parent->parent_referral,$parent,200,$step);
-        //             }elseif($step==3){
-        //                 return $this->findMatch($parent->parent_referral,$parent,100,$step);
-        //             }elseif($step==4){
-        //                 return $this->findMatch($parent->parent_referral,$parent,50,$step);
-        //             }elseif($step==5){
-        //                 return $this->findMatch($parent->parent_referral,$parent,20,$step);
-        //             }elseif($step==6){
-        //                 return $this->findMatch($parent->parent_referral,$parent,10,$step);
-        //             }else{
-        //                 return $this->findMatch($parent->parent_referral,$parent,10,$step);
-        //             }
-        //         }
-
-        //     }else{
-        //         return false;
-        //     }
-        // }
-        // else{
-        //     return false;
-        // }
+            // }else{
+            //     return false;
+            // }
+        }
+        else{
+            return false;
+        }
 
         return response()->json(['members' => $members,'parent'=>$parent->parent_referral,'match trans'=>$match_trans]); 
     }
