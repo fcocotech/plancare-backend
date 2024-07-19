@@ -6,6 +6,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\{File};
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -29,37 +30,43 @@ class ProductController extends Controller
     public function create(Request $request) {
         try {
             $user = Auth::user();
-
+    
             $product = new Product;
             $product->name = $request->name;
             $product->description = $request->description;
             $product->price = $request->price;
             $product->is_active = 1;
             $product->is_shop_active = 1;
-
-            if($request->has('product_image') && $request->product_image != ''){
-                $proof_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->product_image));
-                $proof_path = storage_path('app/public/images/products/');
-                if(!File::isDirectory($proof_path)){
-                    File::makeDirectory($proof_path, 0777, true, true);
+    
+            // Handle multiple file uploads
+            $fileUrls = [];
+            if ($request->hasFile('files')) {
+                foreach ($request->file('files') as $file) {
+                    $filePath = $file->store('public/images/products');
+                    $fileUrls[] = env('APP_URL', '').Storage::url($filePath);
                 }
-                $proof_name = str_replace(' ', '_', $product->name).'.png';
-                file_put_contents($proof_path.$proof_name, $proof_image);
-                $product->photo_url = env('APP_URL', '') . '/storage/images/products/'.$proof_name;
+            }
+
+            // Save the comma-separated string of file URLs to the product
+            if (!empty($fileUrls)) {
+                $product->photo_url = implode(',', $fileUrls);
             }
 
             $product->save();
+    
             return [
                 "status" => true,
-                "message" => 'Product Saved!'
+                "message" => 'Product Saved!',
+                "fileUrls" => $fileUrls,
+                "files" => $request->files 
             ];
-        } catch(\Exception $e){
+        } catch (\Exception $e) {
             return [
                 "status" => false,
                 "message" => $e->getMessage()
             ];
         }
-    }
+    }    
 
     public function delete(Request $request, $product_id) {
         $product = Product::find($product_id);
