@@ -85,7 +85,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/add/new-product', 'App\Http\Controllers\ProductController@create');
     Route::delete('/product/delete/{product_id}', 'App\Http\Controllers\ProductController@delete');
     Route::put('/product/update-status/{product_id}', 'App\Http\Controllers\ProductController@updateStatus');
-    Route::put('/product/update-details/{product_id}', 'App\Http\Controllers\ProductController@update');
+    Route::any('/product/update-details/{product_id}', 'App\Http\Controllers\ProductController@update');
     Route::get('/products', 'App\Http\Controllers\ProductController@show');
     Route::get('/active-products', 'App\Http\Controllers\ProductController@activeProducts');
     // Products Purchase

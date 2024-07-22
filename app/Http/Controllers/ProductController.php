@@ -116,25 +116,22 @@ class ProductController extends Controller
             ], 404);
         }
 
-        if($product->name != $request->name){
-            $product->name = $request->name;
-        }
-        if($product->description != $request->description){
-            $product->description = $request->description;
-        }
-        if($product->price != $request->price){
-            $product->price = $request->price;
-        }
-        
-        if($request->has('product_image') && $request->product_image != ''){
-            $proof_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->product_image));
-            $proof_path = storage_path('app/public/images/products/');
-            if(!File::isDirectory($proof_path)){
-                File::makeDirectory($proof_path, 0777, true, true);
+        $product->name = $request->name ?? '';
+        $product->description = $request->description ?? '';
+        $product->price = $request->price ?? 0;
+        $product->photo_url = $request->photo_url;
+        // Handle new file uploads
+        $fileUrls = explode(',', $product->photo_url); // Existing file URLs
+
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $filePath = $file->store('public/images/products');
+                $fileUrls[] = env('APP_URL', '') . Storage::url($filePath);
             }
-            $proof_name = str_replace(' ', '_', $product->name).'.png';
-            file_put_contents($proof_path.$proof_name, $proof_image);
-            $product->photo_url = env('APP_URL', '') . '/storage/images/products/'.$proof_name;
+        }
+
+        if (!empty($fileUrls)) {
+            $product->photo_url = implode(',', $fileUrls);
         }
 
 
@@ -142,6 +139,7 @@ class ProductController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Product update successful!',
+            'product' => $request->name
         ]);
     }
 
