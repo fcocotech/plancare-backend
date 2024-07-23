@@ -30,13 +30,13 @@ class TransactionController extends Controller
             $earnings = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
             $cleared = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->where('cleared',1)->sum('amount');
-            $withdrawable = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->get();
+            $withdrawable = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->where('amount','>',0)->get();
             $withdrawal_request = Transaction::with(['commission_from','user'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
 
             $points_purchase = Transaction::with(['commission_from','user'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
             $total_winthdrawal = Transaction::with(['commission_from','user'])->where('trans_type', '3')->where('withdrawable',5)->get();
             
-            $total_earnings = $earnings->sum('amount');
+            $total_earnings = $earnings->where('amount','>',0)->sum('amount');
         }else{
             $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->whereIn('trans_type', ['2','5'])->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
@@ -176,9 +176,13 @@ class TransactionController extends Controller
                             $productPurchase->update();
                         }
 
-                     
-                        $this->assignCommission($payment_for,$payment_for->id,0,1);
-                        $this->findMatch($payment_for->parent_referral, $payment_for->id, 500, 1);
+                        if($request->amount < 0){
+                            $this->assignNegativeCommission($payment_for,$payment_for->id,-3000);
+                        }else{
+                            $this->assignCommission($payment_for,$payment_for->id,0,1);
+                            $this->findMatch($payment_for->parent_referral, $payment_for->id, 500, 1);
+                        }
+                       
                         //$this->findMatch($payment_for->parent_referral,$payment_for,500,1);
                         
                         //get other members of parent id
@@ -356,7 +360,39 @@ class TransactionController extends Controller
         }
         
     }
+    protected function assignNegativeCommission($member,$newmemberid,$comm_rate){
+            $user = Auth::user();
+            $parent = User::find($member->parent_referral);
+            $parentid=$parent->id;
+            if($parent->id==1){
+                return false;
+            }else{
+                if($parent!=null){
+                   
+                    $transaction = new Transaction;
+                    $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
+                    $transaction->description = "Commission distribution -3000";
+                    $transaction->payment_method = 0;
+                    $transaction->amount = $comm_rate;
+                    $transaction->proof_url = null;
+                    $transaction->processed_by = $user->id;
+                    $transaction->created_by=$user->id;
+                    $transaction->user_id = $newmemberid;
+                    $transaction->trans_type = 2;//commission
+                    $transaction->status = 1;
+                    $transaction->commission_rate = 0.0;
+                    $transaction->commission_from = $newmemberid;
+                    $transaction->cleared=1;
+                    $transaction->withdrawable=1;
+                    $transaction->save();
 
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+        
+    }
     protected function assignCommission($member,$newmemberid,$comm_rate,$step){
         // DB::beginTransaction();
         try{
