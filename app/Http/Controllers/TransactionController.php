@@ -29,7 +29,7 @@ class TransactionController extends Controller
         if($user->id==1){
             $earnings = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
-            $cleared = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->where('cleared',1)->sum('amount');
+            $cleared = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->where('amount','>',0)->where('cleared',1)->sum('amount');
             $withdrawable = Transaction::with(['commission_from','user'])->whereIn('trans_type', ['2','5'])->where('amount','>',0)->get();
             $withdrawal_request = Transaction::with(['commission_from','user'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
 
@@ -40,7 +40,7 @@ class TransactionController extends Controller
         }else{
             $earnings = Transaction::with(['commission_from'])->where('user_id', $user->id)->whereIn('trans_type', ['2','5'])->whereNotIn('withdrawable', [2,3,4,5])->get();
             // $earnings = UserCommission::where('user_id', $user->id)->get();
-            $cleared = Transaction::with(['commission_from'])->where('user_id', $user->id)->whereIn('trans_type', ['2','5'])->where('cleared',1)->sum('amount');
+            $cleared = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('amount','>',0)->whereIn('trans_type', ['2','5'])->where('cleared',1)->sum('amount');
             $withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->whereIn('trans_type', ['2','5'])->get();
             $withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
             $total_winthdrawal = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->where('withdrawable',5)->get();
