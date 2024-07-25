@@ -178,7 +178,7 @@ class TransactionController extends Controller
 
                         if($request->amount < 0){
                             $this->assignNegativeCommission($payment_for,$payment_for->id,-3000);
-                        }   
+                        }
                         
                         $this->assignCommission($payment_for,$payment_for->id,0,1);
                         $this->findMatch($payment_for->parent_referral, $payment_for->id, 500, 1);
