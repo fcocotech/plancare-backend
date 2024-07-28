@@ -181,7 +181,9 @@ class TransactionController extends Controller
                         }
                         
                         $this->assignCommission($payment_for,$payment_for->id,0,1);
-                        $this->findMatch($payment_for->parent_referral, $payment_for->id, 500, 1);
+                        if($this->findChildCount($payment_for->parent_referral)>2){
+                            $this->findMatch($payment_for->parent_referral, $payment_for->id, 500, 1);
+                        }
                         
                        
                         //$this->findMatch($payment_for->parent_referral,$payment_for,500,1);
@@ -245,7 +247,7 @@ class TransactionController extends Controller
         
         if($parentid!=1){
             // if($match_trans==0){
-                if($this->findChildCount($parentid)>2){
+                // if($this->findChildCount($parentid)>2){
                     $transaction = new Transaction;
                     $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
                     $transaction->description = "Match Bonus Commission Level: ".$step;
@@ -282,9 +284,10 @@ class TransactionController extends Controller
                         }
                     }
                     return true;
-                }else{
-                    return false;
-                }
+                // }else{
+                //     return $this->findMatch($parent->parent_referral, $newmemberid, 0, $step);
+                //     // return false;
+                // }
             // }
             // else{
             //     return false;
