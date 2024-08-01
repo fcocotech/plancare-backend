@@ -391,6 +391,8 @@ class TransactionController extends Controller
                     $transaction->withdrawable=1;
                     $transaction->save();
 
+                    $user->status = 5;//if user has negative
+                    $user->update();
                     return true;
                 }else{
                     return false;

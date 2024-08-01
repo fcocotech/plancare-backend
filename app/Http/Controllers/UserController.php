@@ -74,7 +74,7 @@ class UserController extends Controller
         );
 
         if ($request->filter!=null) {
-           $users["profile"]->where('users.status', $request->filter);//gets all active user
+           $users["profile"]->whereIn('users.status',[$request->filter,4]);//gets all active user
         }
 
         $users["profile"] = $users["profile"]->groupBy('users.id','users.name','users.email','users.referral_code','users.status','users.role_id','rf.referral_code','rf.name','users.cleared')->get();
@@ -545,12 +545,12 @@ class UserController extends Controller
     
     protected function getInnerMembers($parentid,$innermembers){
 
-        $members = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('parent_referral', $parentid)->where('status', '1')->get();
+        $members = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('parent_referral', $parentid)->whereIn('status', ['1','5'])->get();
         if($members!=null){
             
             if($members!=null){
                 foreach($members as $mem){
-                    $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->where('status', '1')->get();
+                    $member_child = User::select('id', 'name', 'email', 'profile_url', 'referral_code')->where('parent_referral', $mem->id)->whereIn('status', ['1','5'])->get();
                     if($member_child!=null){
                         array_push($innermembers["members"],$mem);
                         $innermembers["count"] += 1;
@@ -566,14 +566,14 @@ class UserController extends Controller
     }
 
     public function team(Request $request, $user_id){        
-        $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('id', $user_id)->first();
-        $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('parent_referral', $leader->id)->where('status', '1')->where('role_id','!=','3')->get();
+        $leader = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id','status')->where('id', $user_id)->first();
+        $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id','status')->where('parent_referral', $leader->id)->whereIn('status', ['1','5'])->where('role_id','!=','3')->get();
         
         $leader->members_count = count($members);
 
         if($members!=null){
             foreach($members as $mem){
-                $members_count = User::where('parent_referral', $mem->id)->where('status', '1')->count();
+                $members_count = User::where('parent_referral', $mem->id)->whereIn('status', ['1','5'])->count();
                 $mem->members_count = $members_count;
             }
         }
