@@ -178,6 +178,8 @@ class TransactionController extends Controller
 
                         if($request->amount < 0){
                             $this->assignNegativeCommission($payment_for,$payment_for->id,-3000);
+                            $payment_for->status = 5;
+                            $payment_for->update();
                         }
                         
                         $this->assignCommission($payment_for,$payment_for->id,0,1);
@@ -391,8 +393,6 @@ class TransactionController extends Controller
                     $transaction->withdrawable=1;
                     $transaction->save();
 
-                    $user->status = 5;//if user has negative
-                    $user->update();
                     return true;
                 }else{
                     return false;
