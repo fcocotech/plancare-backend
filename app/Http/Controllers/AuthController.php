@@ -31,7 +31,7 @@ class AuthController extends Controller
         $password = $request->password;
 
         // Add the status to the credentials array
-        $credentials = ['referral_code' => $username, 'password' => $password, 'status' => 1];
+        $credentials = ['referral_code' => $username, 'password' => $password, 'status' => [1,5]];
 
         // Attempt to authenticate the user
         if (Auth::attempt($credentials) && RateLimiter::availableIn('lock-username:' . $request->username) < 1) {
