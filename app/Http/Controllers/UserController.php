@@ -395,7 +395,7 @@ class UserController extends Controller
         try{
             $user = User::where('id', $request->id)->first();
             
-            if($user->status==1){
+            if($user->status==1 || $user->status==5){
                 $user->update(["status"=>2]);
             }elseif($user->status==2){
                 $user->delete();
