@@ -242,8 +242,8 @@ class TransactionController extends Controller
     }
     protected function findMatch($parentid, $newmemberid, $comm_rate, $step){
         $user = Auth::user();
-        $members = User::where('parent_referral',$parentid)->where("status",1)->get(['id']);
-        $parent = User::where('id',$parentid)->where("status",1)->first();
+        $members = User::where('parent_referral',$parentid)->get(['id']);
+        $parent = User::where('id',$parentid)->first();
         
         // $match_trans=Transaction::whereIn('commission_from',$members)->where('user_id', $parentid)->where('trans_type',5)->where('amount',$comm_rate)->count();
         
