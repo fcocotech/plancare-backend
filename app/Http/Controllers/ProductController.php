@@ -125,10 +125,23 @@ class ProductController extends Controller
 
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                // Add timestamp to avoid overwriting
+                $fileContents = file_get_contents($file->getRealPath());
+                $base64File = base64_encode($fileContents);
+                
                 $originalFileName = time() . '_' . $file->getClientOriginalName();
-                $filePath = $file->storeAs('public/images/products', $originalFileName);
-                $fileUrls[] = env('APP_URL', '') . Storage::url($filePath);
+                $filePath = storage_path('app/public/images/products/' . $originalFileName);
+
+                if (!File::isDirectory(storage_path('app/public/images/products'))) {
+                    File::makeDirectory(storage_path('app/public/images/products'), 0777, true, true);
+                }
+
+                $decodedFile = base64_decode($base64File);
+                try {
+                    file_put_contents($filePath, $decodedFile);
+                    $fileUrls[] = env('APP_URL', '') . '/storage/images/products/' . $originalFileName;
+                } catch (\Exception $e) {
+                    return response()->json(['error' => 'Failed to save image'], 500);
+                }
             }
         }
 
