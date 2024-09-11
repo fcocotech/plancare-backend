@@ -125,7 +125,9 @@ class ProductController extends Controller
 
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $filePath = $file->store('public/images/products');
+                // Add timestamp to avoid overwriting
+                $originalFileName = time() . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs('public/images/products', $originalFileName);
                 $fileUrls[] = env('APP_URL', '') . Storage::url($filePath);
             }
         }
