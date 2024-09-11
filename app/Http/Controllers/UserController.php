@@ -198,7 +198,7 @@ class UserController extends Controller
         }
         $profile_name = time().'_'.$user->id.'_profile.png';
         file_put_contents($profile_path.$profile_name, $profile_image);
-        $user->profile_url = env('APP_URL', '') . '/storage/images/profiles/'.$profile_name;
+        $user->profile_url = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/profiles/'.$profile_name;
 
         $id_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoid));
         $id_path = storage_path('app/public/images/ids/');
@@ -207,7 +207,7 @@ class UserController extends Controller
         }
         $id_name = time().'_'.$user->id.'_id.png';
         file_put_contents($id_path.$id_name, $id_image);
-        $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
+        $user->idurl = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/ids/'.$id_name;
 
         //Add product purchase
         $user->save();
@@ -311,7 +311,7 @@ class UserController extends Controller
         }
         $profile_name = time().'_'.$user->id.'_profile.png';
         file_put_contents($profile_path.$profile_name, $profile_image);
-        $user->profile_url = env('APP_URL', '') . '/storage/images/profiles/'.$profile_name;
+        $user->profile_url = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/profiles/'.$profile_name;
 
         $id_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoid));
         $id_path = storage_path('app/public/images/ids/');
@@ -320,7 +320,7 @@ class UserController extends Controller
         }
         $id_name = time().'_'.$user->id.'_id.png';
         file_put_contents($id_path.$id_name, $id_image);
-        $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
+        $user->idurl = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/ids/'.$id_name;
 
         //Add product purchase
         $user->save();
@@ -493,7 +493,7 @@ class UserController extends Controller
                 }
                 $profile_name = time().'_'.$user->id.'_profile.png';
                 file_put_contents($profile_path.$profile_name, $profile_image);
-                $user->profile_url = env('APP_URL', '') . '/storage/images/profiles/'.$profile_name;
+                $user->profile_url = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/profiles/'.$profile_name;
             }
 
             if($user->idurl != $request->photoid) {
@@ -504,7 +504,7 @@ class UserController extends Controller
                 }
                 $id_name = time().'_'.$user->id.'_id.png';
                 file_put_contents($id_path.$id_name, $id_image);
-                $user->idurl = env('APP_URL', '') . '/storage/images/ids/'.$id_name;
+                $user->idurl = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/ids/'.$id_name;
             }
 
             if($request->has('newpassword') && $request->has('confirmpassword')){

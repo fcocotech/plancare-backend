@@ -43,7 +43,7 @@ class ProductController extends Controller
             if ($request->hasFile('files')) {
                 foreach ($request->file('files') as $file) {
                     $filePath = $file->store('public/images/products');
-                    $fileUrls[] = env('APP_URL', '').Storage::url($filePath);
+                    $fileUrls[] = env('APP_URL', 'https://apinew.plancareph.com').Storage::url($filePath);
                 }
             }
 

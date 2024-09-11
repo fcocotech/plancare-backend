@@ -157,7 +157,7 @@ class TransactionController extends Controller
                         }
                         $proof_name = time().'_'.$user->id.'_proof.png';
                         file_put_contents($proof_path.$proof_name, $proof_image);
-                        $data['proof_url'] = env('APP_URL', '') . '/storage/images/proof/'.$proof_name;
+                        $data['proof_url'] = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/proof/'.$proof_name;
                     }
                     
                     //make payment
