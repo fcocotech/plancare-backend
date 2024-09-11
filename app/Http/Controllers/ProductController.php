@@ -128,7 +128,7 @@ class ProductController extends Controller
                 // Add timestamp to avoid overwriting
                 $originalFileName = time() . '_' . $file->getClientOriginalName();
                 $filePath = $file->storeAs('public/images/products', $originalFileName);
-                $fileUrls[] = env('APP_URL', '') . Storage::url($filePath);
+                $fileUrls[] = env('APP_URL', 'https://apinew.plancareph.com') . Storage::url($filePath);
             }
         }
 
