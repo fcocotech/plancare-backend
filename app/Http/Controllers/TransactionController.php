@@ -467,8 +467,8 @@ class TransactionController extends Controller
 						$commission_rates_1199 	= [0.28, 0.09, 0.05, 0.025, 0.0125, 0.007, 0.005, 0.0031, 0.00186, 0.001116, 0.0006696, 0.00040176, 0.000241056, 0.0001446336, 0.00008678016, 0.000052068096, 0.0000312408576, 0.00001874451456, 0.00001124670874, 0.000006748025242];
 						$commission_rates_3000 	= [0.30, 0.10, 0.05, 0.025, 0.0125, 0.007, 0.005, 0.0031, 0.00186, 0.001116, 0.0006696, 0.00040176, 0.000241056, 0.0001446336, 0.00008678016, 0.000052068096, 0.0000312408576, 0.00001874451456, 0.00001124670874, 0.000006748025242];
 
-						$productPurchase = ProductPurchase::find($prodid);
-						$product = Product::find($productPurchase->product_id);
+						// $productPurchase = ProductPurchase::find($prodid);
+						$product = Product::find($prodid);
 
 						if ($product->price == 599) {
 							$next_comm_rate = $commission_rates_599[$level];
