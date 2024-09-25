@@ -145,7 +145,7 @@ class TransactionController extends Controller
 	}
 
 	public function makePayment(Request $request) {
-		return $this->makePaymentV2($request);
+		// return $this->makePaymentV2($request);
 		/// code below not in use
 		try {
 			$user = Auth::user();
