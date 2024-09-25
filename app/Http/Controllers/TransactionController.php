@@ -44,24 +44,35 @@ class TransactionController extends Controller
 			// $earnings = UserCommission::where('user_id', $user->id)->get();
 			$clearedQuery = Transaction::with(['commission_from'])->where('trans_type', '2')->where('cleared',1);
 
-			$withdrawable = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1)->get();
-			$withdrawal_request = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5)->get();
+			$withdrawableQuery = Transaction::with(['commission_from'])->where('trans_type', '2')->where('withdrawable',1);
+			$withdrawal_requestQuery = Transaction::with(['commission_from'])->where('trans_type', '3')->whereNot('withdrawable',5);
+			$points_purchaseQuery = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1]);
 
-			$points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('payment_method', 6)->whereIn('status', [0,1])->get();
 			$total_withdrawal = Transaction::with(['commission_from'])->where('trans_type', '3')->where('withdrawable',5)->get();            
 		}else{
 			$earningsQuery = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->whereNotIn('withdrawable', [2,3,4,5]);
 			// $earnings = UserCommission::where('user_id', $user->id)->get();
 			$clearedQuery = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('cleared',1);
 
-			$withdrawable = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1)->get();
-			$withdrawal_request = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5)->get();
-			$total_withdrawal = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->where('withdrawable',5)->get();
+			$withdrawablQuerye = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '2')->where('withdrawable',1);
+			$withdrawal_requestQuery = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->whereNot('withdrawable',5);
+			$total_withdrawalQuery = Transaction::with(['commission_from'])->where('user_id', $user->id)->where('trans_type', '3')->where('withdrawable',5);
+
 			$points_purchase = Transaction::with(['commission_from'])->where('trans_type', '4')->where('user_id', $user->id)->where('payment_method', 6)->whereIn('status', [0,1])->get();
 		}
 
 		if ($categoryId != 0) {
 			$earningsQuery->whereHas('user.productPurchases.product.category', function ($query) use ($categoryId) {
+				$query->where('id', $categoryId);
+			});
+
+			$withdrawableQuery->whereHas('user.productPurchases.product.category', function ($query) use ($categoryId) {
+				$query->where('id', $categoryId);
+			});
+			$withdrawal_requestQuery->whereHas('user.productPurchases.product.category', function ($query) use ($categoryId) {
+				$query->where('id', $categoryId);
+			});
+			$points_purchaseQuery->whereHas('user.productPurchases.product.category', function ($query) use ($categoryId) {
 				$query->where('id', $categoryId);
 			});
 
@@ -73,6 +84,10 @@ class TransactionController extends Controller
 		$total_earnings = $earningsQuery->get()->sum('amount');
 		$earnings = $earningsQuery->with(['user.productPurchases.product.category'])->get();
 		$cleared = $clearedQuery->sum('amount');
+
+		$withdrawable = $withdrawableQuery->get();
+		$withdrawal_request = $withdrawal_requestQuery->get();
+		$points_purchase = $points_purchaseQuery->get();
 
 		return response()->json([
 			'status' => true,
@@ -452,8 +467,8 @@ class TransactionController extends Controller
 						$commission_rates_1199 	= [0.28, 0.09, 0.05, 0.025, 0.0125, 0.007, 0.005, 0.0031, 0.00186, 0.001116, 0.0006696, 0.00040176, 0.000241056, 0.0001446336, 0.00008678016, 0.000052068096, 0.0000312408576, 0.00001874451456, 0.00001124670874, 0.000006748025242];
 						$commission_rates_3000 	= [0.30, 0.10, 0.05, 0.025, 0.0125, 0.007, 0.005, 0.0031, 0.00186, 0.001116, 0.0006696, 0.00040176, 0.000241056, 0.0001446336, 0.00008678016, 0.000052068096, 0.0000312408576, 0.00001874451456, 0.00001124670874, 0.000006748025242];
 
-						$productPurchase = ProductPurchase::find($prodid);
-						$product = Product::find($productPurchase->product_id);
+						// $productPurchase = ProductPurchase::find($prodid);
+						$product = Product::find($prodid);
 
 						if ($product->price == 599) {
 							$next_comm_rate = $commission_rates_599[$level];
