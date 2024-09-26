@@ -17,51 +17,97 @@ class UserController extends Controller
 {
     public $debugger = [];
 
-    public function getCardData(Request $request) {
-        // $sql = "SELECT 
-        //             (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status !='3') as total_users,
-        //             (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '2') as pending_users,
-        //             (SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = '1') as total_active
-        //         FROM users u LIMIT 1
-        // ";
-        // $totals = DB::select($sql);
-
-        // $totalsQuery = User::with(['productPurchases.product.category'])
-        //                     ->select(
-        //                         DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status !=\'3\') as total_users'),
-        //                         DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'2\') as pending_users'),
-        //                         DB::raw('(SELECT COUNT(id) FROM users WHERE deleted_at IS NULL AND is_admin = 0 AND status = \'1\') as total_active')
-        //                     );
-        
-        $totalUsersQuery                = User::with(['productPurchases.product.category'])->where('status', '!=', 3)->where('is_admin', 0);
-        $totalPendingUsersQuery         = User::with(['productPurchases.product.category'])->where('status', 2)->whereNull('proof_url')->where('is_admin', 0);
-        $totalPendingApprovalUsersQuery = User::with(['productPurchases.product.category'])->where('status', 2)->whereNotNull('proof_url')->where('is_admin', 0);
-        $totalActiveUsersQuery          = User::with(['productPurchases.product.category'])->where('status', 1)->where('is_admin', 0);
-
-        $categoryId = $request->category_id;
-
+    protected function getUsersQuery($category_id, $filter = null, $approval = false) {
+        $users = User::with(['members', 'productPurchases.product.category'])
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.referral_code',
+                'users.status',
+                'users.role_id',
+                'rf.name as referredbyname',
+                'rf.referral_code as referredby',
+                'users.cleared'
+            )
+            ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
+            ->selectRaw('(SELECT p.name FROM product_purchases pp
+                            LEFT JOIN products p ON pp.product_id = p.id
+                            WHERE pp.purchased_by = users.id AND pp.purchase_type=1
+                            ORDER BY pp.created_at ASC
+                            LIMIT 1) as product_name')
+            ->selectRaw('(SELECT p.price FROM product_purchases pp
+                            LEFT JOIN products p ON pp.product_id = p.id
+                            WHERE pp.purchased_by = users.id AND pp.purchase_type=1
+                            ORDER BY pp.created_at ASC
+                            LIMIT 1) as product_price')
+            ->selectRaw('(SELECT pp.id FROM product_purchases pp
+                            WHERE pp.purchased_by = users.id AND pp.purchase_type=1
+                        ) as product_purchase_id')
+            ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
+            ->leftJoin('transactions as tr', function ($join) {
+                $join->on('tr.user_id', '=', 'users.id')
+                    ->where('tr.trans_type', '2')
+                    ->whereNull('tr.deleted_at');
+            })
+            ->where('users.is_admin', '!=', 1)
+            ->where('users.role_id', '!=', 3);
+    
+        // Apply status filtering if specified
+        if ($filter != null) {
+            $users->where('users.status', $filter);
+        }
+    
+        // Apply proof_url filtering if specified
+        if ($approval != null) {
+            $users->whereNotNull('users.proof_url');
+        } else {
+            $users->whereNull('users.proof_url');
+        }
+    
+        // Apply category filtering if specified
+        $categoryId = $category_id;
         if ($categoryId != 0) {
-            $totalUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
-                $query->where('id', $categoryId);
-            });
-            $totalPendingUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
-                $query->where('id', $categoryId);
-            });
-            $totalPendingApprovalUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
-                $query->where('id', $categoryId);
-            });
-            $totalActiveUsersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+            $users->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
                 $query->where('id', $categoryId);
             });
         }
+    
+        return $users->groupBy(
+            'users.id',
+            'users.name',
+            'users.email',
+            'users.referral_code',
+            'users.status',
+            'users.role_id',
+            'rf.referral_code',
+            'rf.name',
+            'users.cleared'
+        );
+    }
 
+    public function getCardData(Request $request) {
+        $totalUsersQuery = $this->getUsersQuery($request->category_id);
+    
+        $totalPendingUsersQuery = $this->getUsersQuery($request->category_id, 2);
+        // $totalPendingUsersQuery->where('users.status', 2)
+        //                        ->whereNull('users.proof_url');
+    
+        $totalPendingApprovalUsersQuery = $this->getUsersQuery($request->category_id, 2, true);
+        // $totalPendingApprovalUsersQuery->where('users.status', 2)
+        //                                ->whereNotNull('users.proof_url');
+    
+        $totalActiveUsersQuery = $this->getUsersQuery($request->category_id, 1);
+        // $totalActiveUsersQuery->where('users.status', 1);
+    
+        // Get the counts for each query
         $totals = (object) [
-            'total_users' => $totalUsersQuery->count(),
-            'pending_users' => $totalPendingUsersQuery->count(),
-            'pending_approval' => $totalPendingApprovalUsersQuery->count(),
-            'total_active' => $totalActiveUsersQuery->count()
+            'total_users' => count($totalUsersQuery->get()),
+            'pending_users' => count($totalPendingUsersQuery->get()),
+            'pending_approval' => count($totalPendingApprovalUsersQuery->get()),
+            'total_active' => count($totalActiveUsersQuery->get()),
         ];
-
+    
         return response()->json([
             'status' => true,
             'totals' => $totals,
