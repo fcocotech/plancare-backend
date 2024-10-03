@@ -122,9 +122,9 @@ class UserController extends Controller
             ->where('users.role_id', '!=', 3);
     
         // Apply status filtering if specified
-        if ($filter != null) {
-            $users->where('users.status', $filter);
-        }
+        // if ($filter != null) {
+        //     $users->where('users.status', $filter);
+        // }
     
         // Apply proof_url filtering if specified
         // if ($approval != null) {
