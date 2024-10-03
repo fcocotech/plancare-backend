@@ -86,6 +86,65 @@ class UserController extends Controller
         );
     }
 
+    protected function getUsersQuery2($category_id, $filter = null, $approval = false) {
+        $users = User::with(['members', 'productPurchases.product.category'])
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.referral_code',
+                'users.status',
+                'users.role_id',
+                'rf.name as referredbyname',
+                'rf.referral_code as referredby',
+                'users.cleared'
+            )
+            ->selectRaw('(SELECT p.name FROM product_purchases pp
+                            LEFT JOIN products p ON pp.product_id = p.id
+                            WHERE pp.purchased_by = users.id AND pp.purchase_type=1
+                            ORDER BY pp.created_at ASC
+                            LIMIT 1) as product_name')
+            ->selectRaw('(SELECT p.price FROM product_purchases pp
+                            LEFT JOIN products p ON pp.product_id = p.id
+                            WHERE pp.purchased_by = users.id AND pp.purchase_type=1
+                            ORDER BY pp.created_at ASC
+                            LIMIT 1) as product_price')
+            ->selectRaw('(SELECT pp.id FROM product_purchases pp
+                            WHERE pp.purchased_by = users.id AND pp.purchase_type=1
+                        ) as product_purchase_id')
+            ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
+            ->leftJoin('transactions as tr', function ($join) {
+                $join->on('tr.user_id', '=', 'users.id')
+                    ->where('tr.trans_type', '2')
+                    ->whereNull('tr.deleted_at');
+            })
+            ->where('users.is_admin', '!=', 1)
+            ->where('users.role_id', '!=', 3);
+    
+        // Apply status filtering if specified
+        if ($filter != null) {
+            $users->where('users.status', $filter);
+        }
+    
+        // Apply proof_url filtering if specified
+        // if ($approval != null) {
+        //     $users->whereNotNull('users.proof_url');
+        // } else {
+        //     $users->whereNull('users.proof_url');
+        // }
+    
+        // Apply category filtering if specified
+        $categoryId = $category_id;
+        if ($categoryId != 0) {
+            $users->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
+    
+        return $users;
+        
+    }
+
     public function getCardData(Request $request) {
         $totalUsersQuery = $this->getUsersQuery($request->category_id);
     
