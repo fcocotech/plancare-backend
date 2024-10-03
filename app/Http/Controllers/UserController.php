@@ -86,7 +86,7 @@ class UserController extends Controller
         );
     }
 
-    public function getCardData(Request $request) {
+    public function getCardData(Request $request) { 
         $totalUsersQuery = $this->getUsersQuery($request->category_id);
     
         $totalPendingUsersQuery = $this->getUsersQuery($request->category_id, 2);
@@ -141,7 +141,7 @@ class UserController extends Controller
                 'users.role_id',
                 'rf.name as referredbyname',
                 'rf.referral_code as referredby',
-                'users.cleared'
+                // 'users.cleared'
             )
             ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
             ->selectRaw('(SELECT p.name FROM product_purchases pp
@@ -177,11 +177,11 @@ class UserController extends Controller
     
         $categoryId = $request->category_id;
     
-        if ($categoryId != 0) {
-            $users->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
-                $query->where('id', $categoryId);
-            });
-        }
+        // if ($categoryId != 0) {
+        //     $users->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+        //         $query->where('id', $categoryId);
+        //     });
+        // }
     
         $users = $users->groupBy(
             'users.id',
@@ -191,8 +191,8 @@ class UserController extends Controller
             'users.status',
             'users.role_id',
             'rf.referral_code',
-            'rf.name',
-            'users.cleared'
+            'rf.name'
+            // 'users.cleared'
         )->get();
     
         return response()->json(['status' => true, 'users' => $users, 'params' => $request->filter]);
