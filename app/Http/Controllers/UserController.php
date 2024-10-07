@@ -140,16 +140,16 @@ class UserController extends Controller
                 $query->where('id', $categoryId);
             });
         }
-        $users = DB::select('SELECT u.name,u.email,u.reference_code,u.parent_referral,u.cleared,p.name,p.price FROM `users` as u 
-join product_purchases as pp on u.id=pp.purchased_by 
-join products as p on p.id=pp.product_id 
-where u.status in (1,2) and isnull(u.deleted_at) and isnull(pp.deleted_at)and isnull(p.deleted_at) and pp.purchase_type=1 and u.is_admin<>1 and u.role_id<>3",)
+//         $users = DB::select("SELECT u.name,u.email,u.reference_code,u.parent_referral,u.cleared,p.name,p.price FROM `users` as u 
+// join product_purchases as pp on u.id=pp.purchased_by 
+// join products as p on p.id=pp.product_id 
+// where u.status in (1,2) and isnull(u.deleted_at) and isnull(pp.deleted_at)and isnull(p.deleted_at) and pp.purchase_type=1 and u.is_admin<>1 and u.role_id<>3");
         return $users;
         
     }
 
-    public function getCardData(Request $request) { 
-        $totalUsersQuery = $this->getUsersQuery($request->category_id);
+    public function getCardData(Request $request) {
+        $totalUsersQuery = $this->getUsersQuery2($request->category_id);
     
         $totalPendingUsersQuery = $this->getUsersQuery($request->category_id, 2);
         // $totalPendingUsersQuery->where('users.status', 2)
