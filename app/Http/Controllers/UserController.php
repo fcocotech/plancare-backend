@@ -99,6 +99,7 @@ class UserController extends Controller
                 'rf.referral_code as referredby',
                 'users.cleared'
             )
+            ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
             ->selectRaw('(SELECT p.name FROM product_purchases pp
                             LEFT JOIN products p ON pp.product_id = p.id
                             WHERE pp.purchased_by = users.id AND pp.purchase_type=1
@@ -113,11 +114,11 @@ class UserController extends Controller
                             WHERE pp.purchased_by = users.id AND pp.purchase_type=1
                         ) as product_purchase_id')
             ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
-            // ->leftJoin('transactions as tr', function ($join) {
-            //     $join->on('tr.user_id', '=', 'users.id')
-            //         ->where('tr.trans_type', '2')
-            //         ->whereNull('tr.deleted_at');
-            // })
+            ->leftJoin('transactions as tr', function ($join) {
+                $join->on('tr.user_id', '=', 'users.id')
+                    ->where('tr.trans_type', '2')
+                    ->whereNull('tr.deleted_at');
+            })
             ->where('users.is_admin', '!=', 1)
             ->where('users.role_id', '!=', 3);
     
@@ -149,7 +150,18 @@ class UserController extends Controller
         //     ->whereNull('pp.deleted_at')
         //     ->whereNull('p.deleted_at');
             
-        return $users;
+        // return $users;
+        return $users->groupBy(
+            'users.id',
+            'users.name',
+            'users.email',
+            'users.referral_code',
+            'users.status',
+            'users.role_id',
+            'rf.referral_code',
+            'rf.name',
+            'users.cleared'
+        );
         
     }
 
@@ -208,7 +220,7 @@ class UserController extends Controller
                 'users.role_id',
                 'rf.name as referredbyname',
                 'rf.referral_code as referredby',
-                // 'users.cleared'
+                'users.cleared'
             )
             ->selectRaw('COALESCE(SUM(tr.amount), 0) as total_commissions')
             ->selectRaw('(SELECT p.name FROM product_purchases pp
@@ -227,7 +239,7 @@ class UserController extends Controller
             ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
             ->leftJoin('transactions as tr', function ($join) {
                 $join->on('tr.user_id', '=', 'users.id')
-                    ->whereIn('tr.trans_type',[1,2])->whereNull('tr.deleted_at');
+                    ->whereIn('tr.trans_type',[2])->whereNull('tr.deleted_at');
             })
             ->where('users.is_admin', '!=', 1)
             ->where('users.role_id', '!=', 3);
@@ -244,11 +256,11 @@ class UserController extends Controller
     
         $categoryId = $request->category_id;
     
-        // if ($categoryId != 0) {
-        //     $users->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
-        //         $query->where('id', $categoryId);
-        //     });
-        // }
+        if ($categoryId != 0) {
+            $users->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                $query->where('id', $categoryId);
+            });
+        }
     
         $users = $users->groupBy(
             'users.id',
@@ -258,8 +270,8 @@ class UserController extends Controller
             'users.status',
             'users.role_id',
             'rf.referral_code',
-            'rf.name'
-            // 'users.cleared'
+            'rf.name',
+            'users.cleared'
         )->get();
     
         return response()->json(['status' => true, 'users' => $users, 'params' => $request->filter]);
