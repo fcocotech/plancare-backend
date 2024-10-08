@@ -112,19 +112,19 @@ class UserController extends Controller
             ->selectRaw('(SELECT pp.id FROM product_purchases pp
                             WHERE pp.purchased_by = users.id AND pp.purchase_type=1
                         ) as product_purchase_id')
-            ->join('users as rf', 'rf.id', '=', 'users.parent_referral')
-            ->join('transactions as tr', function ($join) {
-                $join->on('tr.user_id', '=', 'users.id')
-                    ->where('tr.trans_type', '2')
-                    ->whereNull('tr.deleted_at');
-            })
+            ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
+            // ->leftJoin('transactions as tr', function ($join) {
+            //     $join->on('tr.user_id', '=', 'users.id')
+            //         ->where('tr.trans_type', '2')
+            //         ->whereNull('tr.deleted_at');
+            // })
             ->where('users.is_admin', '!=', 1)
             ->where('users.role_id', '!=', 3);
     
         // Apply status filtering if specified
-        // if ($filter != null) {
-        //     $users->where('users.status', $filter);
-        // }
+        if ($filter != null) {
+            $users->where('users.status', $filter);
+        }
     
         // Apply proof_url filtering if specified
         // if ($approval != null) {
@@ -149,10 +149,6 @@ class UserController extends Controller
         //     ->whereNull('pp.deleted_at')
         //     ->whereNull('p.deleted_at');
             
-//         $users = DB::select('SELECT u.name,u.email,u.reference_code,u.parent_referral,u.cleared,p.name,p.price FROM `users` as u 
-// join product_purchases as pp on u.id=pp.purchased_by 
-// join products as p on p.id=pp.product_id 
-// where u.status in (1,2) and isnull(u.deleted_at) and isnull(pp.deleted_at)and isnull(p.deleted_at) and pp.purchase_type=1 and u.is_admin<>1 and u.role_id<>3",)
         return $users;
         
     }
@@ -160,15 +156,15 @@ class UserController extends Controller
     public function getCardData(Request $request) {
         $totalUsersQuery = $this->getUsersQuery2($request->category_id);
     
-        $totalPendingUsersQuery = $this->getUsersQuery($request->category_id, 2);
+        $totalPendingUsersQuery = $this->getUsersQuery2($request->category_id, 2);
         // $totalPendingUsersQuery->where('users.status', 2)
         //                        ->whereNull('users.proof_url');
     
-        $totalPendingApprovalUsersQuery = $this->getUsersQuery($request->category_id, 2, true);
+        $totalPendingApprovalUsersQuery = $this->getUsersQuery2($request->category_id, 2, true);
         // $totalPendingApprovalUsersQuery->where('users.status', 2)
         //                                ->whereNotNull('users.proof_url');
     
-        $totalActiveUsersQuery = $this->getUsersQuery($request->category_id, 1);
+        $totalActiveUsersQuery = $this->getUsersQuery2($request->category_id, 1);
         // $totalActiveUsersQuery->where('users.status', 1);
     
         // Get the counts for each query
@@ -231,7 +227,7 @@ class UserController extends Controller
             ->leftJoin('users as rf', 'rf.id', '=', 'users.parent_referral')
             ->leftJoin('transactions as tr', function ($join) {
                 $join->on('tr.user_id', '=', 'users.id')
-                    ->where('tr.trans_type', '2')->whereNull('tr.deleted_at');
+                    ->whereIn('tr.trans_type',[1,2])->whereNull('tr.deleted_at');
             })
             ->where('users.is_admin', '!=', 1)
             ->where('users.role_id', '!=', 3);
@@ -240,11 +236,11 @@ class UserController extends Controller
             $users->where('users.status', $request->filter);
         }
     
-        if ($request->approval != null) {
-            $users->whereNotNull('users.proof_url');
-        } else {
-            $users->whereNull('users.proof_url');
-        }
+        // if ($request->approval != null) {
+        //     $users->whereNotNull('users.proof_url');
+        // } else {
+        //     $users->whereNull('users.proof_url');
+        // }
     
         $categoryId = $request->category_id;
     
