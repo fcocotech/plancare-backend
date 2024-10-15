@@ -847,9 +847,8 @@ class UserController extends Controller
         // }
         $leader = $leaderQuery->first();
 
-
         // $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('parent_referral', $leader->id)->where('status', '1')->where('role_id','!=','3')->get();
-        $membersQuery = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id','status')->with(['productPurchases.product.category'])->where('parent_referral', $leader->id)->where('role_id','!=','3');
+        $membersQuery = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id','status','product_id')->with(['productPurchases.product.category'])->where('parent_referral', $leader->id)->where('role_id','!=','3');
         if ($categoryId != 0) {
             $membersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
                 $query->where('id', $categoryId);
@@ -861,8 +860,14 @@ class UserController extends Controller
 
         if($members!=null){
             foreach($members as $mem){
-                $members_count = User::where('parent_referral', $mem->id)->where('status', '1')->count();
-                $mem->members_count = $members_count;
+                $membersCountQuery = User::with(['productPurchases.product.category'])->where('parent_referral', $mem->id)->where('status', '1');
+                if ($categoryId != 0) {
+                    $membersCountQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
+                        $query->where('id', $categoryId);
+                    });
+                }
+                
+                $mem->members_count = $membersCountQuery->count();
             }
         }
 
