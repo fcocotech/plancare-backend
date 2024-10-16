@@ -917,15 +917,16 @@ class UserController extends Controller
         )->where('id', $id)->first(),"parent"=>null);
         
         $user["parent"]= User::where('id',$user["user"]->parent_referral)->first();
-
+        
         // first product purhcased
-        $productPurchase = ProductPurchase::with(['product', 'processed_by_user', 'transaction', 'transaction.mode_of_payment'])->where('product_id', 1)->where('purchased_by', $user['user']->id)->first();
+        // $productPurchase = ProductPurchase::with(['product', 'processed_by_user', 'transaction', 'transaction.mode_of_payment'])->where('product_id', 1)->where('purchased_by', $user['user']->id)->first();
+        $productPurchase = ProductPurchase::with(['product', 'processed_by_user', 'transaction', 'transaction.mode_of_payment'])->where('purchased_by', $user['user']->id)->first();
         $user["payment_details"] = $productPurchase;
 
         // check if null product_purchase
         if($productPurchase){
-            $productPurchase = ProductPurchase::with(['product'])->where('product_id', 1)->where('purchased_by', $user['user']->id)->orderBy('created_at', 'ASC')->first();
-            
+            // $productPurchase = ProductPurchase::with(['product'])->where('product_id', 1)->where('purchased_by', $user['user']->id)->orderBy('created_at', 'ASC')->first();
+            $productPurchase = ProductPurchase::with(['product'])->where('purchased_by', $user['user']->id)->orderBy('created_at', 'ASC')->first();
             // check again if null then proceed transactions
             if($productPurchase){
                 $transaction = Transaction::with(['mode_of_payment'])->where('user_id', $productPurchase->purchased_by)
