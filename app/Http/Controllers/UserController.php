@@ -849,25 +849,32 @@ class UserController extends Controller
 
         // $members = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id')->where('parent_referral', $leader->id)->where('status', '1')->where('role_id','!=','3')->get();
         $membersQuery = User::select('id', 'name', 'email', 'profile_url', 'referral_code', 'cleared', 'role_id','status','product_id')->with(['productPurchases.product.category'])->where('parent_referral', $leader->id)->where('role_id','!=','3');
-        if ($categoryId != 0) {
-            $membersQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
-                $query->where('id', $categoryId);
-            });
-        }
+        
         $members = $membersQuery->get();
+        
+        foreach ($members as $member) {
+            $membersCountQuery = User::where('parent_referral', $member->id)->where('status', '1');
+            
+            $inCategory = false;
+            $forceColor = false;
+            if ($categoryId != 0) {
+                $forceColor = true;
+                foreach ($member->productPurchases as $purchase) {
+                    if ($purchase->product->category->id == $categoryId) {
+                        $inCategory = true;
+                        break;
+                    }
+                }
+            }
+            $member->is_forced = $forceColor;
+            $member->is_filter = $inCategory;
+            $member->members_count = $membersCountQuery->count();
+        }
         
         $leader->members_count = count($members);
 
         if($members!=null){
             foreach($members as $mem){
-                $membersCountQuery = User::with(['productPurchases.product.category'])->where('parent_referral', $mem->id)->where('status', '1');
-                if ($categoryId != 0) {
-                    $membersCountQuery->whereHas('productPurchases.product.category', function ($query) use ($categoryId) {
-                        $query->where('id', $categoryId);
-                    });
-                }
-                
-                $mem->members_count = $membersCountQuery->count();
             }
         }
 
