@@ -798,7 +798,7 @@ class UserController extends Controller
         
     }
     
-    protected function getInnerMembers($parentid,$innermembers,$categoryId=0){
+    protected function getInnerMembers($parentid,$innermembers,$categoryId){
 
         // $members = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->where('parent_referral', $parentid)->where('status', '1')->get();
         $membersQuery = User::select('id', 'name', 'email', 'profile_url','referral_code','status')->with(['productPurchases.product.category'])->where('parent_referral', $parentid);
