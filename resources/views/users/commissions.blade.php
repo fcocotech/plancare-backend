@@ -48,7 +48,7 @@
                             @foreach ($user->transactions as $transaction)
                                 <li>
                                     <strong>Description:</strong> {{ $transaction->description }}<br>
-                                    <strong>From:</strong> {{ $transaction->commissionFrom->name ?? 'Unknown' }}<br>
+                                    <strong>From:</strong> {{ $transaction->commissionFrom->name ?? 'Unknown' }} ({{ $transaction->commissionFrom->referral_code }})<br>
                                     <strong>Amount:</strong> {{ number_format($transaction->amount, 2) }}
                                 </li>
                             @endforeach
