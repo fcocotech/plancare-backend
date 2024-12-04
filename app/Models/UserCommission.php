@@ -13,10 +13,18 @@ class UserCommission extends Model
     protected $fillable = [
         'commission_level',
         'user_id',
-        'status'
+        'commission_from',
+        'status',
+        'comm_rate',
+        'comm_amt',
+        'cleared',
     ];
 
     public function commission_level() {
         return $this->hasOne(Commission::class, 'level', 'commission_level');
+    }
+
+    public function commissionFrom() {
+        return $this->belongsTo(User::class, 'commission_from', 'id');
     }
 }

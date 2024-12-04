@@ -77,4 +77,13 @@ class User extends Authenticatable
     public function withdrawal_accounts(): HasMany {
         return $this->hasMany(WithdrawalAccount::class, 'user_id', 'id');
     }
+
+    public function commissions() {
+        return $this->hasMany(UserCommission::class, 'user_id', 'id');
+    }
+
+    public function transactions() {
+        return $this->hasMany(Transaction::class, 'user_id', 'id');
+    }
+
 }

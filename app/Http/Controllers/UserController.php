@@ -978,4 +978,23 @@ class UserController extends Controller
             return response()->json(['status' => false]);
         }
     }   
+
+    public function showUsersWithCommissions() {
+        $users = User::with([
+            'productPurchases',
+            'clearedmembers',
+            'withdrawal_accounts',
+            'roles',
+            'transactions' => function ($query) {
+                $query->select('id', 'user_id', 'commission_from', 'amount', 'description')
+                    ->whereNotNull('commission_from'); // Exclude null commission_from
+            }
+        ])
+        ->where('id', '!=', 1) // Exclude user with ID 1
+        ->get();
+
+        return view('users.commissions', compact('users'));
+    }
+    
+
 }
