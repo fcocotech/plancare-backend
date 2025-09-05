@@ -469,7 +469,7 @@
                         <h2>{{$referral_code}}</h2>
                         <p>Please remember your user id. You will use this to login to your account and give it as a referral code to your members.</p>
                         <!-- Action -->
-                        <p>To confirm your registration pleass make your payment through the following payment options<p><br/>
+                        <p>To confirm your registration please make your payment through the following payment options<p><br/>
                         <h4>Bank Transfer</h4><br/>
                         <p>Bank Name: PNB | Philippine National Bank</p>
                         <p>Account Number: 300110085725</p>
