@@ -45,7 +45,7 @@ class ForgotPasswordController extends Controller
 
         if($existingUser->email){
             Mail::send('emails.forgot-password', [
-                'action_url' => env('FRONTEND_URL').'#/reset-password/'.$token,
+                'action_url' => env('FRONTEND_URL', 'https://builder.plancareph.com/').'#/reset-password/'.$token,
                 'name' => $existingUser->name
             ], function ($message) use ($existingUser) {
                 $message->to($existingUser->email)->subject('Action Required: Password Reset');

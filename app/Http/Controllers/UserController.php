@@ -363,7 +363,7 @@ class UserController extends Controller
     public function sendEmailVerification($user) {
         $token = Str::random(32).$user->id;
         Mail::send('emails.verify-email', [
-            'action_url' => env('FRONTEND_URL').'verify-email/'.$token,
+            'action_url' => env('FRONTEND_URL', 'https://builder.plancareph.com/').'#/verify-email/'.$token,
         ], function ($message) use ($user) {
             $message->to($user->email)->subject('Action Required: Email Verification');
         });
@@ -609,7 +609,7 @@ class UserController extends Controller
         $parent = User::where('reference_code', $user->referral_code)->first();
 
         Mail::send('emails.sign-up', [
-            'action_url' => env('FRONTEND_URL').'login',
+            'action_url' => env('FRONTEND_URL', 'https://builder.plancareph.com/').'#/login',
             'user_id' => '0001-'.str_pad($parent->id, 4, '0', STR_PAD_LEFT).'-'.str_pad($user->id, 4, '0', STR_PAD_LEFT)
         ], function ($message) use ($user) {
             $message->to($user->email)->subject('Your Email Was Verified');
