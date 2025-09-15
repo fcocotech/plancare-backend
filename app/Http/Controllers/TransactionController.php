@@ -410,60 +410,63 @@ class TransactionController extends Controller
             $parentid=$parent->id;
             if($parent->id==1){
                 return false;
-            }else{
+            } else {
                 if($parent!=null){
                    
-                    $commission = new UserCommission();
-                    
-                    $transaction = new Transaction;
-                    $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
-                    $transaction->description = "Commission distribution";
-                    $transaction->payment_method = 0;
-                    $transaction->amount = $comm_rate;
-                    $transaction->proof_url = null;
-                    $transaction->processed_by = $user->id;
-                    $transaction->created_by=$user->id;
-                    $transaction->user_id = $parent->id;
-                    $transaction->trans_type = 2;//commission
-                    $transaction->status = 1;
-                    $transaction->commission_rate = 0.0;
-                    $transaction->commission_from = $newmemberid;
-                    $transaction->cleared=1;
-                    $transaction->withdrawable=1;
-                    $transaction->save();
-
-                    $commission->commission_level = 0;
-                    $commission->user_id = $parent->id;
-                    $commission->commission_from = $newmemberid;
-                    $commission->status=1;
-                    $commission->comm_rate = 0.0;
-                    $commission->comm_amt = $comm_rate;
-                    $commission->cleared=1;
-                    $commission->save();
-                    
-                        //assign commission
-                        $step++;
+                    if($comm_rate > 0){
+                        $commission = new UserCommission();
                         
-                        if($step>1 && $step<11){
-                            if($step==2){
-                                return $this->assignCommission($parent,$newmemberid,200,$step);
-                            }elseif($step==3){
-                                return $this->assignCommission($parent,$newmemberid,100,$step);
-                            }elseif($step==4){
-                                return $this->assignCommission($parent,$newmemberid,50,$step);
-                            }elseif($step==5){
-                                return $this->assignCommission($parent,$newmemberid,20,$step);
-                            }elseif($step==6){
-                                return $this->assignCommission($parent,$newmemberid,10,$step);
-                            }else{
-                                return $this->assignCommission($parent,$newmemberid,10,$step);
-                            }
+                        $transaction = new Transaction;
+                        $transaction->transaction_id = substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 10);
+                        $transaction->description = "Commission distribution";
+                        $transaction->payment_method = 0;
+                        $transaction->amount = $comm_rate;
+                        $transaction->proof_url = null;
+                        $transaction->processed_by = $user->id;
+                        $transaction->created_by=$user->id;
+                        $transaction->user_id = $parent->id;
+                        $transaction->trans_type = 2;//commission
+                        $transaction->status = 1;
+                        $transaction->commission_rate = 0.0;
+                        $transaction->commission_from = $newmemberid;
+                        $transaction->cleared=1;
+                        $transaction->withdrawable=1;
+                        $transaction->save();
+
+                        $commission->commission_level = 0;
+                        $commission->user_id = $parent->id;
+                        $commission->commission_from = $newmemberid;
+                        $commission->status=1;
+                        $commission->comm_rate = 0.0;
+                        $commission->comm_amt = $comm_rate;
+                        $commission->cleared=1;
+                        $commission->save();
+                    }
+                    
+                    
+                    //assign commission
+                    $step++;
+                    
+                    if($step>1 && $step<11){
+                        if($step==2){
+                            return $this->assignCommission($parent,$newmemberid,200,$step);
+                        }elseif($step==3){
+                            return $this->assignCommission($parent,$newmemberid,100,$step);
+                        }elseif($step==4){
+                            return $this->assignCommission($parent,$newmemberid,50,$step);
+                        }elseif($step==5){
+                            return $this->assignCommission($parent,$newmemberid,20,$step);
+                        }elseif($step==6){
+                            return $this->assignCommission($parent,$newmemberid,10,$step);
                         }else{
-                            return $this->assignCommission($parent,$newmemberid,0,$step);
+                            return $this->assignCommission($parent,$newmemberid,10,$step);
                         }
+                    }else{
+                        return $this->assignCommission($parent,$newmemberid,0,$step);
+                    }
                        
                     return true;
-                }else{
+                } else {
                     return false;
                 }
             }
