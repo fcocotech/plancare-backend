@@ -27,7 +27,7 @@ Route::get('/verify-email/{token}', 'App\Http\Controllers\UserController@emailVe
 Route::post('/forgot-password', 'App\Http\Controllers\ForgotPasswordController@forgotPassword')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 Route::post('/forgot-password/password-update', 'App\Http\Controllers\ForgotPasswordController@passwordUpdate')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 
-Route::get('/products/get-all', 'App\Http\Controllers\ProductController@getAll')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
+Route::get('/products/get-all',  'App\Http\Controllers\ProductController@getAll')->withoutMiddleware(['App\Http\Middleware\VerifyBearerToken']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
