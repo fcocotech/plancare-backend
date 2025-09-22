@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    public function getAll(Request $request) {
+        $products = Product::get();
+        return response()->json($products);
+    }
 
     public function show(Request $request) {
         $products = Product::get();
