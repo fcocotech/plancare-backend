@@ -242,7 +242,7 @@ class UserController extends Controller
 
         $validator = Validator::make($payload, [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|string|max:255',
             'password' => 'required|string|min:6',
             'confirmpassword' => 'required|string|min:6|same:password',
             'address' => 'required|string',
@@ -254,7 +254,7 @@ class UserController extends Controller
             'sec_q1' => 'required|integer',
             'sec_q1_ans' => 'required|string',
             'birthdate' => 'required|string',
-            'photoid' => 'required|string',
+            'photoid' => 'nullable|string',
             'photoprofile' => 'nullable|string',
             'terms_and_conditions' => 'accepted',
         ], [
@@ -312,7 +312,7 @@ class UserController extends Controller
         $profileData = $request->input('photoprofile');
         $idData = $request->input('photoid');
 
-        if (!$this->isValidBase64Image($idData)) {
+        if ($idData && !$this->isValidBase64Image($idData)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Please upload a valid ID image.',
@@ -374,10 +374,12 @@ class UserController extends Controller
                 $user->profile_url = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/profiles/'.$profile_name;
             }
 
-            $id_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $idData));
-            $id_name = time().'_'.$user->id.'_id.png';
-            file_put_contents($id_path.$id_name, $id_image);
-            $user->idurl = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/ids/'.$id_name;
+            if ($idData) {
+                $id_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $idData));
+                $id_name = time().'_'.$user->id.'_id.png';
+                file_put_contents($id_path.$id_name, $id_image);
+                $user->idurl = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/ids/'.$id_name;
+            }
 
             $user->save();
 
