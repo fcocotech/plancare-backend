@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\{User, Referral, Commission, UserCommission, Product, ProductPurchase,Transaction};
-use Illuminate\Support\Facades\{File, Hash};
+use Illuminate\Support\Facades\{File, Hash, Log, Validator};
 // use DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -238,107 +238,177 @@ class UserController extends Controller
         // }
         
         
-        $product_id = $request->product;
-        $parent_id = 0;
-        if($request->referral_code==null){
-            $request->referral_code='10011';//assign to admin
-        }
+        $payload = $request->all();
 
-        $referrerUser = User::where('referral_code',$request->referral_code)->whereIn('status',[1,5])->first();
-        
-        if($referrerUser==null){
+        $validator = Validator::make($payload, [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'confirmpassword' => 'required|string|min:6|same:password',
+            'address' => 'required|string',
+            'city' => 'required|string',
+            'zipcode' => 'required|string',
+            'nationality' => 'required|string',
+            'mobile_number' => 'required|string',
+            'product' => 'required',
+            'sec_q1' => 'required|integer',
+            'sec_q1_ans' => 'required|string',
+            'birthdate' => 'required|string',
+            'photoid' => 'required|string',
+            'photoprofile' => 'nullable|string',
+            'terms_and_conditions' => 'accepted',
+        ], [
+            'confirmpassword.same' => 'Passwords do not match.',
+            'terms_and_conditions.accepted' => 'You must agree to our Terms and Conditions as well as our Refund Policy.',
+        ]);
+
+        if ($validator->fails()) {
             return response()->json([
                 'status' => false,
-                'message' => 'We cannot find this referral code. Pls use another code',
-            ]);
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
         }
-        //check if referral code is already assigned to 4 slots
-        // if($referrerUser->id!='1'){
-        //     if($this->findChildCount($referrerUser->id)>=4){
-        //         return response()->json([
-        //             'status' => false,
-        //             'message' => 'Slot is already full. Pls use another code',
-        //         ]);
-        //     }  
-        // }
 
-        if(!$referrerUser){
+        $product_id = $request->input('product');
+        if (is_array($product_id)) {
+            // Dropdown occasionally sends the whole object; we only need the id
+            $product_id = $product_id['id'] ?? $product_id['value'] ?? null;
+        }
+
+        if (!is_numeric($product_id)) {
             return response()->json([
                 'status' => false,
-                'message' => 'Make sure you have a valid referral code',
-            ]);
+                'message' => 'Please pick a product before continuing.',
+            ], 422);
         }
-        // }
-        
 
-        // product Valid
+        $product_id = (int) $product_id;
+
+        $referralCode = $request->input('referral_code');
+        if (!$referralCode) {
+            $referralCode = '10011'; // assign to admin
+        }
+
+        $referrerUser = User::where('referral_code', $referralCode)
+            ->whereIn('status', [1, 5])
+            ->first();
+
+        if (!$referrerUser) {
+            return response()->json([
+                'status' => false,
+                'message' => 'We cannot find this referral code. Please use another code.',
+            ], 422);
+        }
+
         $product = Product::where('id', $product_id)->where('is_active', 1)->first();
-        if(!$product){
+        if (!$product) {
             return response()->json([
                 'status' => false,
-                'message' => 'Make sure you have a valid referral code',
+                'message' => 'This product is no longer available. Please pick another one.',
+            ], 422);
+        }
+
+        $profileData = $request->input('photoprofile');
+        $idData = $request->input('photoid');
+
+        if (!$this->isValidBase64Image($idData)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please upload a valid ID image.',
+            ], 422);
+        }
+
+        if ($profileData && !$this->isValidBase64Image($profileData)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please upload a valid profile image.',
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $user = new User;
+            $user->address = $request->address;
+            $user->birthdate = $request->birthdate;
+            $user->city = $request->city;
+            $user->zipcode = $request->zipcode;
+            $user->email = $request->email;
+            $user->idtype = $request->idtype;
+            $user->mobile_number = $request->mobile_number;
+            $user->name = $request->name;
+            $user->nationality = $request->nationality;
+            $user->sec_q1 = $request->sec_q1;
+            $user->sec_q1_ans = $request->sec_q1_ans;
+            $user->sec_q2 = $request->sec_q2;
+            $user->sec_q2_ans = $request->sec_q2_ans;
+            $user->sec_q3 = $request->sec_q3;
+            $user->sec_q3_ans = $request->sec_q3_ans;
+            $user->parent_referral = $referrerUser->id;
+            $user->status = 2; // pending
+            $user->password = Hash::make($request->password);
+            $user->reference_code = 0;
+            $user->cleared = false;
+            $user->product_id = $product_id;
+
+            $temporaryCode = Str::uuid()->toString();
+            $user->referral_code = $temporaryCode;
+            $user->save();
+
+            $profile_path = storage_path('app/public/images/profiles/');
+            $id_path = storage_path('app/public/images/ids/');
+
+            if (!File::isDirectory($profile_path)) {
+                File::makeDirectory($profile_path, 0777, true, true);
+            }
+
+            if (!File::isDirectory($id_path)) {
+                File::makeDirectory($id_path, 0777, true, true);
+            }
+
+            if ($profileData) {
+                $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $profileData));
+                $profile_name = time().'_'.$user->id.'_profile.png';
+                file_put_contents($profile_path.$profile_name, $profile_image);
+                $user->profile_url = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/profiles/'.$profile_name;
+            }
+
+            $id_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $idData));
+            $id_name = time().'_'.$user->id.'_id.png';
+            file_put_contents($id_path.$id_name, $id_image);
+            $user->idurl = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/ids/'.$id_name;
+
+            $user->save();
+
+            $user->referral_code = $this->generateReferralCode($user->id, $product_id, $referrerUser->id);
+            $user->save();
+
+            $productPurchase = new ProductPurchase;
+            $productPurchase->product_id = $product_id;
+            $productPurchase->purchased_by = $user->id;
+            $productPurchase->referrer_id = $referrerUser->id ?? 0;
+            $productPurchase->save();
+
+            DB::commit();
+
+            $this->sendEmailVerification($user);
+            $this->sendWelcomeEmail($user);
+
+            return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            Log::error('Unable to register user', [
+                'error' => $th->getMessage(),
+                'trace' => $th->getTraceAsString(),
             ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'We hit a snag while saving your account. Please try again later or contact support.',
+            ], 500);
         }
-
-        $user = new User;
-        $user->address = $request->address;
-        $user->birthdate = $request->birthdate;
-        $user->city = $request->city;
-        $user->zipcode = $request->zipcode;
-        $user->email            = $request->email;
-        $user->idtype           = $request->idtype;
-        $user->mobile_number    = $request->mobile_number;
-        $user->name             = $request->name;
-        $user->nationality      = $request->nationality;
-        $user->sec_q1           = $request->sec_q1;
-        $user->sec_q1_ans       = $request->sec_q1_ans;
-        $user->sec_q2           = $request->sec_q2;
-        $user->sec_q2_ans       = $request->sec_q2_ans;
-        $user->sec_q3           = $request->sec_q3;
-        $user->sec_q3_ans       = $request->sec_q3_ans;
-        $user->parent_referral  = $referrerUser->id;//$referrerUser->referral_code;//assign parent referral code
-        $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
-        $user->status           = 2;//assign as pending
-        $user->password = Hash::make($request->password);
-        $user->reference_code=0;
-        $user->cleared = false;
-        $user->product_id = $product_id;
-        if($request->photoprofile == null || $request->photoprofile ==""){
-            $request->photoprofile ==  "person.png";
-        }
-        $profile_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoprofile));
-        $profile_path = storage_path('app/public/images/profiles/');
-        if(!File::isDirectory($profile_path)){
-            File::makeDirectory($profile_path, 0777, true, true);
-        }
-        $profile_name = time().'_'.$user->id.'_profile.png';
-        file_put_contents($profile_path.$profile_name, $profile_image);
-        $user->profile_url = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/profiles/'.$profile_name;
-
-        $id_image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->photoid));
-        $id_path = storage_path('app/public/images/ids/');
-        if(!File::isDirectory($id_path)){
-            File::makeDirectory($id_path, 0777, true, true);
-        }
-        $id_name = time().'_'.$user->id.'_id.png';
-        file_put_contents($id_path.$id_name, $id_image);
-        $user->idurl = env('APP_URL', 'https://apinew.plancareph.com') . '/storage/images/ids/'.$id_name;
-
-        //Add product purchase
-        $user->save();
-        $productPurchase = new ProductPurchase;
-        $productPurchase->product_id    = $product_id; //for now just 1 product
-        $productPurchase->purchased_by  = $user->id;
-        $productPurchase->referrer_id   = $referrerUser->id ?? 0;
-
-        $productPurchase->save();
-
-        $user->referral_code    = $this->generateReferralCode($user->id,$product_id,$referrerUser->id);
-        $user->update();
-        $this->sendEmailVerification($user);
-        $this->sendWelcomeEmail($user);
-        
-        return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase]);
        
     }
 
@@ -349,7 +419,13 @@ class UserController extends Controller
         return ['usercount' => User::where('parent_referral',$request->id)->where('status',1)->count()];
     }
     protected function generateReferralCode($userid,$prodid,$parentid){
-        $strparentid;
+        if (!is_numeric($prodid) || !is_numeric($parentid) || !is_numeric($userid)) {
+            throw new \InvalidArgumentException('Referral code components must be numeric.');
+        }
+
+        $parentid = (int) $parentid;
+        $userid = (int) $userid;
+
         if($parentid<1){
             $parentid="000";
         }
@@ -359,7 +435,21 @@ class UserController extends Controller
             $parentid="0" . $parentid;
         }
 
-        return $prodid . $parentid . $userid;
+        return (int) $prodid . $parentid . $userid;
+    }
+
+    protected function isValidBase64Image($value)
+    {
+        if (!$value || !is_string($value)) {
+            return false;
+        }
+
+        if (!preg_match('#^data:image/\w+;base64,#i', $value)) {
+            return false;
+        }
+
+        $data = substr($value, strpos($value, ',') + 1);
+        return base64_decode($data, true) !== false;
     }
     
     public function sendEmailVerification($user) {
