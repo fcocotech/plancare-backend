@@ -472,7 +472,8 @@ class UserController extends Controller
     
     public function sendEmailVerification($user) {
         $token = Str::random(32).$user->id;
-        Mail::send('emails.verify-email', [
+        
+        $this->sendMailWithFallback('emails.verify-email', [
             'action_url' => env('FRONTEND_URL', 'https://builder.plancareph.com/').'#/verify-email/'.$token,
         ], function ($message) use ($user) {
             $message->to($user->email)->subject('Action Required: Email Verification');
@@ -480,12 +481,44 @@ class UserController extends Controller
     }
 
     public function sendWelcomeEmail($user) {
-        // $token = Str::random(32).$user->id;
-        Mail::send('emails.register-user', [
+        $this->sendMailWithFallback('emails.register-user', [
             'referral_code' => $user->referral_code,
         ], function ($message) use ($user) {
             $message->to($user->email)->subject('Welcome to PlanCare Philippines');
         });
+    }
+
+    /**
+     * Helper method to send email with automatic fallback to log driver on network failures
+     */
+    private function sendMailWithFallback($view, $data, $callback) {
+        try {
+            Mail::send($view, $data, $callback);
+        } catch (\Exception $e) {
+            // Check if it's a network/DNS related error
+            if (strpos($e->getMessage(), 'name resolution') !== false || 
+                strpos($e->getMessage(), 'Connection could not be established') !== false ||
+                strpos($e->getMessage(), 'getaddrinfo') !== false) {
+                
+                // Temporarily switch to log driver and retry
+                $originalMailer = config('mail.default');
+                config(['mail.default' => 'log']);
+                
+                try {
+                    Mail::send($view, $data, $callback);
+                    Log::info('Email sent via log driver due to SMTP network issues', [
+                        'view' => $view,
+                        'smtp_error' => $e->getMessage()
+                    ]);
+                } finally {
+                    // Restore original mailer
+                    config(['mail.default' => $originalMailer]);
+                }
+            } else {
+                // Re-throw other types of exceptions
+                throw $e;
+            }
+        }
     }
 
     public function approveInfluencer(Request $request){
