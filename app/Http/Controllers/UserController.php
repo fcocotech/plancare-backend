@@ -394,8 +394,24 @@ class UserController extends Controller
 
             DB::commit();
 
-            $this->sendEmailVerification($user);
-            $this->sendWelcomeEmail($user);
+            // Send emails after successful user creation (don't fail the registration if email fails)
+            if (env('MAIL_ENABLED', true)) {
+                try {
+                    $this->sendEmailVerification($user);
+                    $this->sendWelcomeEmail($user);
+                } catch (\Throwable $emailException) {
+                    // Log email failure but don't fail the registration
+                    Log::warning('Failed to send registration emails', [
+                        'user_id' => $user->id,
+                        'error' => $emailException->getMessage(),
+                        'trace' => $emailException->getTraceAsString(),
+                    ]);
+                }
+            } else {
+                Log::info('Email sending is disabled, skipping registration emails', [
+                    'user_id' => $user->id,
+                ]);
+            }
 
             return response()->json(['status' => true, 'user' => $user, 'product' => $productPurchase]);
         } catch (\Throwable $th) {
